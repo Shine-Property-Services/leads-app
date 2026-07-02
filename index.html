@@ -265,8 +265,8 @@ const COLUMNS = [
   {key:'followup',   label:'For follow-up', color:'#0170b9', stages:['Awaiting Contact']},
   {key:'quoting',    label:'For Quoting',   color:'#0e8a86', stages:['In-Person Quote Booked']},
   {key:'quotes_sent',label:'Quotes Sent',   color:'#12b3ad', stages:['Quote Sent']},
-  {key:'later',      label:'For later',     color:'#d99a00', stages:[], manual:true},
   {key:'lost',       label:'Lost Leads',    color:'#8a94a6', stages:['Lost Lead']},
+  {key:'later',      label:'For later',     color:'#d99a00', stages:[], manual:true},
   {key:'other',      label:'Won / Archived',color:'#1aa564', stages:['Job Booked','Completed Job','Archived Quote'], off:true},
 ];
 const COL = {}; COLUMNS.forEach(c=>COL[c.key]=c);
