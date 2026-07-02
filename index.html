@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Shine Leads</title>
+<style>
+:root{
+  --navy:#01355d; --navy-2:#012a4a; --blue:#1e73be; --blue-2:#0170b9;
+  --teal:#22d8d2; --teal-ink:#0b6b67;
+  --ink:#22313f; --text:#3a3a3a; --muted:#6b7683; --faint:#94a0ad;
+  --bg:#f4f6f8; --card:#ffffff; --line:#e5e8ec; --line-2:#eef1f4;
+  --green:#1aa564; --amber:#d99a00; --red:#d94a3d; --grey:#8a94a6;
+  --shadow:0 1px 2px rgba(1,53,93,.06),0 2px 8px rgba(1,53,93,.06);
+  --shadow-lg:0 10px 40px rgba(1,53,93,.18);
+  --radius:12px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+a{color:var(--blue-2);text-decoration:none}
+a:hover{text-decoration:underline}
+.hidden{display:none!important}
+
+/* ---------- Header ---------- */
+header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#023a63 100%);color:#fff;padding:0 18px;position:sticky;top:0;z-index:40;box-shadow:0 2px 12px rgba(1,53,93,.25)}
+.top-row{display:flex;align-items:center;gap:16px;height:60px;max-width:1500px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:2px;font-weight:800;letter-spacing:.5px;font-size:22px;user-select:none}
+.brand .s{color:#fff}
+.brand .dot{color:var(--teal);font-size:26px;line-height:0}
+.brand-sub{font-weight:500;font-size:12px;color:#a8c6df;letter-spacing:.3px;margin-left:8px;padding-left:10px;border-left:1px solid rgba(255,255,255,.2)}
+.spacer{flex:1}
+.search{position:relative;flex:1;max-width:380px}
+.search input{width:100%;padding:9px 12px 9px 34px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.12);color:#fff;outline:none}
+.search input::placeholder{color:#bcd3e6}
+.search input:focus{background:rgba(255,255,255,.2);border-color:var(--teal)}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.7}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:9px;font-weight:600;font-size:13.5px;transition:.15s;white-space:nowrap}
+.btn-teal{background:var(--teal);color:#04322f}
+.btn-teal:hover{background:#3fe4de;transform:translateY(-1px)}
+.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18)}
+.btn-ghost:hover{background:rgba(255,255,255,.2)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-2)}
+.btn-sm{padding:6px 10px;font-size:12.5px}
+.synced{font-size:11.5px;color:#a8c6df;display:flex;flex-direction:column;line-height:1.3;text-align:right}
+.synced b{color:#fff;font-weight:600}
+
+/* ---------- Toolbar ---------- */
+.toolbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 18px;position:sticky;top:60px;z-index:30}
+.toolbar-inner{display:flex;align-items:center;gap:12px;max-width:1500px;margin:0 auto;flex-wrap:wrap}
+.viewtabs{display:flex;background:var(--bg);border-radius:9px;padding:3px}
+.viewtabs button{padding:7px 15px;border-radius:7px;font-weight:600;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:6px}
+.viewtabs button.active{background:#fff;color:var(--navy);box-shadow:var(--shadow)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.chip{padding:6px 12px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid var(--line);color:var(--muted);background:#fff;display:flex;align-items:center;gap:6px;transition:.12s}
+.chip .cdot{width:9px;height:9px;border-radius:50%}
+.chip.on{color:#fff;border-color:transparent}
+.chip .cnt{opacity:.8;font-weight:700;font-size:11px}
+.tb-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);font-weight:700;margin-right:2px}
+.toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:600;cursor:pointer}
+.switch{width:36px;height:20px;border-radius:20px;background:var(--line);position:relative;transition:.15s}
+.switch::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on .switch{background:var(--green)}
+.toggle.on .switch::after{left:18px}
+
+/* ---------- Board ---------- */
+main{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
+.board{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.col{flex:0 0 300px;background:#eef1f4;border-radius:var(--radius);display:flex;flex-direction:column;max-height:calc(100vh - 190px)}
+.col-head{padding:12px 14px;display:flex;align-items:center;gap:9px;border-bottom:2px solid var(--line);position:sticky;top:0}
+.col-head .bar{width:4px;height:18px;border-radius:3px}
+.col-head h3{margin:0;font-size:13.5px;font-weight:800;color:var(--ink);letter-spacing:.2px}
+.col-head .num{margin-left:auto;background:#fff;color:var(--muted);font-weight:700;font-size:12px;padding:2px 9px;border-radius:20px}
+.col-body{overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:9px;flex:1;min-height:40px}
+.col-body.drag-over{background:#e2fbfa;outline:2px dashed var(--teal);outline-offset:-4px;border-radius:8px}
+.card{background:#fff;border-radius:10px;padding:11px 12px;box-shadow:var(--shadow);cursor:pointer;border:1px solid var(--line-2);transition:.12s;border-left:3px solid var(--grey)}
+.card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.card.dragging{opacity:.5}
+.card .nm{font-weight:700;color:var(--ink);font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.card .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:5px}
+.card .meta span{display:inline-flex;align-items:center;gap:4px}
+.pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block}
+.card .foot{display:flex;align-items:center;gap:8px;margin-top:8px;justify-content:space-between}
+.calls-badge{font-size:11px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.src-tag{font-size:10px;color:var(--faint);font-weight:600}
+.overdue{color:var(--red)!important}
+.ghl-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
+
+/* ---------- Table ---------- */
+.table-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:820px}
+th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:11px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+th:hover{color:var(--navy)}
+th .arr{opacity:.5;font-size:9px}
+td{padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tr.row{cursor:pointer}
+tr.row:hover td{background:#f2fbfb}
+td .nm{font-weight:700;color:var(--ink)}
+.count-note{font-size:12.5px;color:var(--muted);margin:2px 0 12px;font-weight:500}
+
+/* ---------- Drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(1,25,45,.45);z-index:50;opacity:0;pointer-events:none;transition:.2s}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:92vw;background:#fff;z-index:60;box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer.show{transform:translateX(0)}
+.dr-head{background:linear-gradient(120deg,var(--navy),var(--navy-2));color:#fff;padding:18px 20px}
+.dr-head .close{position:absolute;top:14px;right:16px;color:#fff;font-size:22px;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.dr-head .close:hover{background:rgba(255,255,255,.15)}
+.dr-name{font-size:20px;font-weight:800;margin:0 30px 4px 0}
+.dr-contact{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.dr-contact a{background:rgba(255,255,255,.14);color:#fff;padding:7px 12px;border-radius:8px;font-weight:600;font-size:13px;display:inline-flex;gap:6px;align-items:center}
+.dr-contact a:hover{background:rgba(255,255,255,.24);text-decoration:none}
+.dr-body{padding:18px 20px;overflow-y:auto;flex:1}
+.fld{margin-bottom:18px}
+.fld label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);font-weight:700;margin-bottom:6px}
+.fld select,.fld input,.fld textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);outline:none}
+.fld select:focus,.fld input:focus,.fld textarea:focus{border-color:var(--blue)}
+.fld textarea{resize:vertical;min-height:70px}
+.logcall{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px;margin-bottom:18px}
+.logcall .n{font-size:26px;font-weight:800;color:var(--navy);line-height:1}
+.logcall .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{padding:8px 0 8px 20px;position:relative;font-size:13px;color:var(--text);border-left:2px solid var(--line);margin-left:4px}
+.timeline li::before{content:"";position:absolute;left:-5px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.timeline li .d{color:var(--muted);font-size:12px}
+.dr-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;background:#fafbfc}
+.grow{flex:1}
+.linkghl{font-size:12px;color:var(--faint);margin-top:4px;display:inline-block}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(1,25,45,.45);opacity:0;pointer-events:none;transition:.18s}
+.modal.show{opacity:1;pointer-events:auto}
+.modal .box{background:#fff;border-radius:16px;width:420px;max-width:92vw;box-shadow:var(--shadow-lg);overflow:hidden;transform:translateY(10px);transition:.18s}
+.modal.show .box{transform:none}
+.modal .box h2{margin:0;padding:18px 22px;background:var(--navy);color:#fff;font-size:17px}
+.modal .box .mbody{padding:20px 22px}
+.modal .box .mfoot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:#fafbfc}
+
+/* ---------- Toast ---------- */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13.5px;z-index:90;opacity:0;transition:.2s;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:9px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast .tick{color:var(--teal)}
+
+/* ---------- Empty / spin ---------- */
+.empty{text-align:center;padding:60px 20px;color:var(--faint)}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.gate{max-width:360px;margin:14vh auto;background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);padding:30px;text-align:center}
+
+@media(max-width:640px){
+  .brand-sub{display:none}
+  .toolbar-inner{gap:8px}
+  .search{max-width:none;order:5;flex-basis:100%}
+  main{padding:12px 10px 60px}
+  .col{flex-basis:82vw}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div class="brand"><span class="s">SHINE</span><span class="dot">.</span><span class="brand-sub">Leads</span></div>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="q" placeholder="Search name, phone, email…" autocomplete="off"/>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-teal" id="addBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#04322f" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add lead</button>
+    <button class="btn btn-ghost" id="pullBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg><span>Pull now</span></button>
+    <div class="synced"><span>Last sync</span><b id="syncedAt">—</b></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="viewtabs">
+      <button data-view="board" class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="10" y="3" width="6" height="12" rx="1"/><rect x="17" y="3" width="6" height="8" rx="1"/></svg>Board</button>
+      <button data-view="table"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Table</button>
+    </div>
+    <span class="tb-label">Show</span>
+    <div class="chips" id="chips"></div>
+    <div class="spacer"></div>
+    <div class="toggle" id="closedToggle"><span class="switch"></span>Include closed</div>
+  </div>
+</div>
+
+<main>
+  <div class="count-note" id="countNote"></div>
+  <div id="boardView" class="board"></div>
+  <div id="tableView" class="hidden"></div>
+  <div id="emptyView" class="empty hidden"></div>
+</main>
+
+<!-- Drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="dr-head" style="position:relative">
+    <button class="close" id="drClose">&times;</button>
+    <h2 class="dr-name" id="drName"></h2>
+    <span class="pill" id="drStatusPill"></span>
+    <div class="dr-contact" id="drContact"></div>
+  </div>
+  <div class="dr-body">
+    <div class="logcall">
+      <div><div class="n" id="drCalls">0</div></div>
+      <div class="grow"><div class="lbl">Times called</div><div style="font-size:12.5px;color:var(--muted)" id="drLast">No contact logged</div></div>
+      <button class="btn btn-primary btn-sm" id="logCallBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Log call</button>
+    </div>
+    <div class="fld"><label>Status</label><select id="drStatus"></select></div>
+    <div class="fld"><label>Next follow-up</label><input type="date" id="drFollow"/></div>
+    <div class="fld"><label>Notes</label><textarea id="drNotes" placeholder="Add a note…"></textarea></div>
+    <div class="fld" id="drGhlWrap"><label>GHL</label><div id="drGhl" style="font-size:13px;color:var(--muted)"></div></div>
+    <div class="fld"><label>Contact history</label><ul class="timeline" id="drTimeline"></ul></div>
+  </div>
+  <div class="dr-foot">
+    <button class="btn btn-primary grow" id="drSave">Save changes</button>
+  </div>
+</aside>
+
+<!-- Add modal -->
+<div class="modal" id="addModal">
+  <div class="box">
+    <h2>Add a lead</h2>
+    <div class="mbody">
+      <div class="fld"><label>Name</label><input id="aName" placeholder="Full name"/></div>
+      <div class="fld"><label>Phone</label><input id="aPhone" placeholder="(250) 555-1234"/></div>
+      <div class="fld"><label>Email</label><input id="aEmail" placeholder="name@email.com"/></div>
+      <div class="fld"><label>Status</label><select id="aStatus"></select></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" id="aCancel" style="color:var(--muted);border-color:var(--line)">Cancel</button>
+      <button class="btn btn-primary" id="aCreate">Create lead</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  var p = new URLSearchParams(location.search);
+  var key = p.get('key') || '';
+  if(!key){
+    document.documentElement.innerHTML =
+      '<div style="font-family:system-ui;max-width:360px;margin:16vh auto;background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 40px rgba(1,53,93,.18);text-align:center">'
+      +'<div style="font-weight:800;font-size:22px;color:#01355d">SHINE<span style="color:#22d8d2">.</span> Leads</div>'
+      +'<p style="color:#6b7683">Add <code>?key=YOUR_PASSCODE</code> to the URL to view leads.</p></div>';
+    throw 'no key';
+  }
+  window.__LEADS_API = { url: 'https://fxutwkandrlmtdjvydal.functions.supabase.co/leads-board' + '?key=' + encodeURIComponent(key) };
+})();
+</script>
+<script>
+/* ============ Config / status model ============ */
+const GROUPS = [
+  {key:'new',    label:'New / To contact', color:'#1e73be', statuses:['New Lead','For Follow-up','No Contact Info']},
+  {key:'quoting',label:'Quoting',          color:'#0170b9', statuses:['For In-person','For Phone Quote','Drive-By Quote','Advised to send photos']},
+  {key:'quote',  label:'Quote sent',       color:'#12b3ad', statuses:['Quote Sent','For Quote Follow-up','Archived Quote','Undecided']},
+  {key:'later',  label:'Later',            color:'#d99a00', statuses:['For Next Year','For later this year']},
+  {key:'won',    label:'Won',              color:'#1aa564', statuses:['Job Booked','Completed']},
+  {key:'dead',   label:'Dead / Lost',      color:'#8a94a6', statuses:['Declined','Tagged as Lost','Lost Lead','Not Serviceable']},
+];
+const CLOSED_GROUPS = ['won','dead'];
+const STATUS_GROUP = {};   // status -> group key
+const STATUS_COLOR = {};   // status -> color
+GROUPS.forEach(g=>g.statuses.forEach(s=>{STATUS_GROUP[s]=g.key;STATUS_COLOR[s]=g.color;}));
+function normStatus(s){ s=(s||'').trim(); if(!s||!STATUS_GROUP[s]) return s||'New Lead'; return s; }
+function groupOf(s){ return STATUS_GROUP[normStatus(s)] || 'new'; }
+function colorOf(s){ return STATUS_COLOR[normStatus(s)] || 'var(--grey)'; }
+const ALL_STATUSES = GROUPS.flatMap(g=>g.statuses);
+
+/* ============ Data layer (API in prod, localStorage in preview) ============ */
+const API = window.__LEADS_API || null;       // set by Pages bootstrap in production
+const LS_KEY = 'shine_leads_overlay_v1';
+let LEADS = [];
+let overlay = {};
+try{ overlay = JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
+function persistOverlay(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(overlay)); }catch(e){} }
+
+function applyOverlay(base){
+  return base.map(l=>{
+    const o = overlay[l.id];
+    return o ? {...l, ...o} : {...l};
+  });
+}
+async function loadLeads(){
+  if(API){
+    const r = await fetch(API.url+'&format=json');
+    const j = await r.json();
+    LEADS = applyOverlay(j.leads||[]);
+    setSynced(j.syncedAt);
+  }else{
+    LEADS = applyOverlay(window.SHINE_LEADS||[]);
+    setSynced(window.SHINE_SYNCED_AT);
+  }
+}
+async function saveLead(id, patch){
+  const l = LEADS.find(x=>x.id===id); if(l) Object.assign(l, patch);
+  overlay[id] = {...(overlay[id]||{}), ...patch};
+  persistOverlay();
+  if(API){
+    try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch})}); }
+    catch(e){ toast('Saved locally — sync failed'); }
+  }
+}
+async function createLead(rec){
+  rec.id = 'new-'+Date.now();
+  rec.origin='manual'; rec.calls=[]; rec.times_called=0;
+  LEADS.unshift(rec);
+  overlay[rec.id] = rec; persistOverlay();
+  if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({create:rec})}); }catch(e){} }
+  return rec;
+}
+
+/* ============ State ============ */
+let view='board';
+let search='';
+let activeGroups = new Set(GROUPS.filter(g=>!CLOSED_GROUPS.includes(g.key)).map(g=>g.key));
+let showClosed=false;
+let sortKey='name', sortDir=1;
+let selected=null;
+
+/* ============ Helpers ============ */
+function fmtPhone(p){ if(!p) return ''; let d=(''+p).replace(/[^0-9]/g,''); if(d.length===11&&d[0]==='1') d=d.slice(1); if(d.length===10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; return p; }
+function telHref(p){ let d=(''+(p||'')).replace(/[^0-9+]/g,''); return d; }
+function parseD(s){ if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; }
+function fmtDate(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:d.getFullYear()!==new Date().getFullYear()?'2-digit':undefined}); }
+function fmtDateTime(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleString('en-CA',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function relDays(s){ const d=parseD(s); if(!d) return null; return Math.floor((Date.now()-d)/86400000); }
+function esc(s){ return (''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function lastContact(l){ if(l.last_contact) return l.last_contact; if(l.calls&&l.calls.length) return l.calls.slice().sort().at(-1); return null; }
+
+function setSynced(s){ const el=document.getElementById('syncedAt'); if(!s){el.textContent='—';return;} const d=parseD(s); el.textContent = d? d.toLocaleString('en-CA',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—'; }
+
+/* ============ Filtering ============ */
+function visibleLeads(){
+  const q=search.toLowerCase().trim();
+  return LEADS.filter(l=>{
+    const g=groupOf(l.status);
+    if(!activeGroups.has(g)) return false;
+    if(!showClosed && CLOSED_GROUPS.includes(g) && !activeGroups.has(g)) return false;
+    if(q){
+      const hay=((l.name||'')+' '+(l.phone||'')+' '+(l.email||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ============ Render: chips ============ */
+function renderChips(){
+  const counts={}; LEADS.forEach(l=>{const g=groupOf(l.status);counts[g]=(counts[g]||0)+1;});
+  const el=document.getElementById('chips'); el.innerHTML='';
+  GROUPS.forEach(g=>{
+    const on=activeGroups.has(g.key);
+    const b=document.createElement('button');
+    b.className='chip'+(on?' on':'');
+    if(on) b.style.background=g.color;
+    b.innerHTML=`<span class="cdot" style="background:${on?'#fff':g.color}"></span>${g.label}<span class="cnt">${counts[g.key]||0}</span>`;
+    b.onclick=()=>{ if(on)activeGroups.delete(g.key); else activeGroups.add(g.key); render(); };
+    el.appendChild(b);
+  });
+}
+
+/* ============ Render: board ============ */
+function card(l){
+  const lc=lastContact(l); const rd=relDays(lc);
+  const follow=l.next_follow_up; const fRel=follow?relDays(follow):null;
+  const overdue = fRel!==null && fRel>0;
+  const src = (l.origin==='ghl'||l.origin==='ghl+sheet')?'<span class="ghl-dot" title="Synced from GHL"></span>':'';
+  return `<div class="card" draggable="true" data-id="${l.id}" style="border-left-color:${colorOf(l.status)}">
+    <div class="nm">${src}${esc(l.name)||'<span style="color:var(--faint)">(no name)</span>'}</div>
+    <div><span class="pill" style="background:${colorOf(l.status)}22;color:${colorOf(l.status)}">${esc(l.status)}</span></div>
+    <div class="meta">
+      ${l.phone?`<span>📞 ${esc(fmtPhone(l.phone))}</span>`:''}
+      ${l.email?`<span>✉️ ${esc(l.email)}</span>`:''}
+    </div>
+    <div class="foot">
+      <span class="calls-badge">📞 ${l.times_called||0} call${(l.times_called||0)===1?'':'s'}${lc?` · <span title="last contact">${fmtDate(lc)}</span>`:''}</span>
+      ${follow?`<span class="calls-badge ${overdue?'overdue':''}">⏰ ${fmtDate(follow)}</span>`:''}
+    </div>
+  </div>`;
+}
+function renderBoard(){
+  const el=document.getElementById('boardView'); el.innerHTML='';
+  const vis=visibleLeads();
+  const shownGroups=GROUPS.filter(g=>activeGroups.has(g.key));
+  shownGroups.forEach(g=>{
+    const items=vis.filter(l=>groupOf(l.status)===g.key)
+      .sort((a,b)=>{ const la=lastContact(a),lb=lastContact(b); return (lb?+parseD(lb):0)-(la?+parseD(la):0); });
+    const col=document.createElement('div'); col.className='col'; col.dataset.group=g.key;
+    col.innerHTML=`<div class="col-head"><span class="bar" style="background:${g.color}"></span><h3>${g.label}</h3><span class="num">${items.length}</span></div>
+      <div class="col-body" data-group="${g.key}">${items.map(card).join('')||'<div style="color:var(--faint);font-size:12px;text-align:center;padding:14px">Nothing here</div>'}</div>`;
+    el.appendChild(col);
+  });
+  wireCards();
+  wireDnd();
+}
+
+/* ============ Render: table ============ */
+function renderTable(){
+  const el=document.getElementById('tableView');
+  let vis=visibleLeads();
+  const get={name:l=>(l.name||'').toLowerCase(),status:l=>l.status||'',times:l=>l.times_called||0,last:l=>+ (parseD(lastContact(l))||0),follow:l=>+(parseD(l.next_follow_up)||0),source:l=>l.source||''};
+  vis.sort((a,b)=>{ const va=get[sortKey](a),vb=get[sortKey](b); return (va<vb?-1:va>vb?1:0)*sortDir; });
+  const arrow=k=>sortKey===k?`<span class="arr">${sortDir>0?'▲':'▼'}</span>`:'';
+  el.innerHTML=`<div class="table-wrap"><table><thead><tr>
+    <th data-s="name">Name ${arrow('name')}</th><th>Contact</th>
+    <th data-s="status">Status ${arrow('status')}</th>
+    <th data-s="times">Calls ${arrow('times')}</th>
+    <th data-s="last">Last contact ${arrow('last')}</th>
+    <th data-s="follow">Follow-up ${arrow('follow')}</th>
+    <th data-s="source">Source ${arrow('source')}</th></tr></thead><tbody>
+    ${vis.map(l=>{const lc=lastContact(l);const fRel=l.next_follow_up?relDays(l.next_follow_up):null;
+      return `<tr class="row" data-id="${l.id}">
+        <td><span class="nm">${esc(l.name)||'—'}</span></td>
+        <td style="font-size:12.5px;color:var(--muted)">${l.phone?esc(fmtPhone(l.phone))+'<br>':''}${l.email?esc(l.email):''}</td>
+        <td><span class="pill" style="background:${colorOf(l.status)}22;color:${colorOf(l.status)}">${esc(l.status)}</span></td>
+        <td style="font-weight:700;color:var(--navy)">${l.times_called||0}</td>
+        <td style="font-size:12.5px">${lc?fmtDate(lc):'<span style="color:var(--faint)">—</span>'}</td>
+        <td style="font-size:12.5px" class="${fRel!==null&&fRel>0?'overdue':''}">${l.next_follow_up?fmtDate(l.next_follow_up):'<span style="color:var(--faint)">—</span>'}</td>
+        <td class="src-tag">${esc(l.source||'')}</td>
+      </tr>`;}).join('')}
+    </tbody></table></div>`;
+  el.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1;}renderTable();});
+  el.querySelectorAll('tr.row').forEach(tr=>tr.onclick=()=>openDrawer(tr.dataset.id));
+}
+
+/* ============ Main render ============ */
+function render(){
+  renderChips();
+  const vis=visibleLeads();
+  document.getElementById('countNote').textContent = `${vis.length} lead${vis.length===1?'':'s'} shown · ${LEADS.length} total`;
+  const empty=document.getElementById('emptyView');
+  document.getElementById('boardView').classList.toggle('hidden',view!=='board');
+  document.getElementById('tableView').classList.toggle('hidden',view!=='table');
+  if(vis.length===0){ empty.classList.remove('hidden'); empty.innerHTML='No leads match your filters.'; document.getElementById('boardView').classList.add('hidden'); document.getElementById('tableView').classList.add('hidden'); }
+  else{ empty.classList.add('hidden'); if(view==='board')renderBoard(); else renderTable(); }
+}
+
+/* ============ Cards / DnD ============ */
+function wireCards(){ document.querySelectorAll('.card').forEach(c=>{ c.onclick=()=>openDrawer(c.dataset.id); }); }
+let dragId=null;
+function wireDnd(){
+  document.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('dragstart',e=>{dragId=c.dataset.id;c.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    c.addEventListener('dragend',()=>{dragId=null;c.classList.remove('dragging');document.querySelectorAll('.col-body').forEach(b=>b.classList.remove('drag-over'));});
+  });
+  document.querySelectorAll('.col-body').forEach(b=>{
+    b.addEventListener('dragover',e=>{e.preventDefault();b.classList.add('drag-over');});
+    b.addEventListener('dragleave',()=>b.classList.remove('drag-over'));
+    b.addEventListener('drop',e=>{e.preventDefault();b.classList.remove('drag-over');
+      if(!dragId)return; const g=b.dataset.group; const l=LEADS.find(x=>x.id===dragId); if(!l)return;
+      if(groupOf(l.status)===g)return;
+      const target=GROUPS.find(x=>x.key===g); const newStatus=target.statuses.includes(l.status)?l.status:target.statuses[0];
+      saveLead(dragId,{status:newStatus}); toast(`Moved to ${newStatus}`); render();
+    });
+  });
+}
+
+/* ============ Drawer ============ */
+function openDrawer(id){
+  const l=LEADS.find(x=>x.id===id); if(!l)return; selected=l;
+  document.getElementById('drName').textContent=l.name||'(no name)';
+  const pill=document.getElementById('drStatusPill'); pill.textContent=l.status; pill.style.background=colorOf(l.status); pill.style.color='#04322f';
+  const contact=document.getElementById('drContact'); contact.innerHTML='';
+  if(l.phone) contact.innerHTML+=`<a href="tel:${telHref(l.phone)}">📞 ${esc(fmtPhone(l.phone))}</a>`;
+  if(l.email) contact.innerHTML+=`<a href="mailto:${esc(l.email)}">✉️ Email</a>`;
+  if(l.phone) contact.innerHTML+=`<a href="sms:${telHref(l.phone)}">💬 Text</a>`;
+  document.getElementById('drCalls').textContent=l.times_called||0;
+  const lc=lastContact(l);
+  document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
+  const sel=document.getElementById('drStatus'); sel.innerHTML=ALL_STATUSES.map(s=>`<option ${s===normStatus(l.status)?'selected':''}>${s}</option>`).join('');
+  document.getElementById('drFollow').value = l.next_follow_up? (l.next_follow_up.slice(0,10)) : '';
+  document.getElementById('drNotes').value = l.notes||'';
+  const ghlWrap=document.getElementById('drGhlWrap'); const ghl=document.getElementById('drGhl');
+  if(l.ghl_contact_id){ ghlWrap.classList.remove('hidden'); ghl.innerHTML=`Synced from GHL${l.ghl_stage?` · stage: <b>${esc(l.ghl_stage)}</b>`:''}${l.source?`<br><span class="src-tag">tags: ${esc(l.source)}</span>`:''}`; }
+  else{ ghlWrap.classList.add('hidden'); }
+  renderTimeline(l);
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('scrim').classList.add('show');
+}
+function renderTimeline(l){
+  const tl=document.getElementById('drTimeline'); const calls=(l.calls||[]).slice().sort().reverse();
+  tl.innerHTML = calls.length? calls.map(c=>`<li>Contact attempt<div class="d">${fmtDateTime(c)}</div></li>`).join('') : '<li style="border:none;color:var(--faint)">No calls logged yet</li>';
+}
+function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('scrim').classList.remove('show'); selected=null; }
+
+document.getElementById('logCallBtn').onclick=()=>{
+  if(!selected)return; const now=new Date().toISOString();
+  const calls=(selected.calls||[]).concat([now]);
+  saveLead(selected.id,{calls, times_called:(selected.times_called||0)+1, last_contact:now});
+  document.getElementById('drCalls').textContent=selected.times_called;
+  document.getElementById('drLast').textContent='Last: '+fmtDateTime(now);
+  renderTimeline(selected); toast('Call logged'); renderCurrentSoft();
+};
+document.getElementById('drSave').onclick=()=>{
+  if(!selected)return;
+  const patch={ status:document.getElementById('drStatus').value, notes:document.getElementById('drNotes').value,
+    next_follow_up:document.getElementById('drFollow').value||null };
+  saveLead(selected.id,patch); toast('Saved'); closeDrawer(); render();
+};
+document.getElementById('drClose').onclick=closeDrawer;
+document.getElementById('scrim').onclick=closeDrawer;
+
+function renderCurrentSoft(){ /* light refresh of counts without closing drawer */ renderChips(); }
+
+/* ============ Add lead ============ */
+const addModal=document.getElementById('addModal');
+document.getElementById('addBtn').onclick=()=>{
+  document.getElementById('aStatus').innerHTML=ALL_STATUSES.map(s=>`<option ${s==='New Lead'?'selected':''}>${s}</option>`).join('');
+  document.getElementById('aName').value='';document.getElementById('aPhone').value='';document.getElementById('aEmail').value='';
+  addModal.classList.add('show');
+};
+document.getElementById('aCancel').onclick=()=>addModal.classList.remove('show');
+addModal.onclick=e=>{if(e.target===addModal)addModal.classList.remove('show');};
+document.getElementById('aCreate').onclick=async()=>{
+  const name=document.getElementById('aName').value.trim();
+  if(!name){toast('Enter a name');return;}
+  await createLead({name,phone:document.getElementById('aPhone').value.trim(),email:document.getElementById('aEmail').value.trim(),status:document.getElementById('aStatus').value,next_follow_up:null,notes:''});
+  addModal.classList.remove('show'); toast('Lead added'); render();
+};
+
+/* ============ Pull now ============ */
+document.getElementById('pullBtn').onclick=async()=>{
+  const btn=document.getElementById('pullBtn'); const span=btn.querySelector('span'); const old=span.textContent;
+  span.innerHTML='<span class="spin"></span> Pulling…'; btn.disabled=true;
+  try{
+    if(API){ await fetch(API.url+'&action=pull',{method:'POST'}); await loadLeads(); toast('Pulled latest from GHL'); }
+    else{ await new Promise(r=>setTimeout(r,900)); toast('Preview mode — connect backend to pull live'); }
+  }catch(e){ toast('Pull failed'); }
+  span.textContent=old; btn.disabled=false; render();
+};
+
+/* ============ View tabs / search / closed ============ */
+document.querySelectorAll('.viewtabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.viewtabs button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); view=b.dataset.view; render();
+});
+let searchT; document.getElementById('q').oninput=e=>{clearTimeout(searchT);searchT=setTimeout(()=>{search=e.target.value;render();},180);};
+const ct=document.getElementById('closedToggle');
+ct.onclick=()=>{ showClosed=!showClosed; ct.classList.toggle('on',showClosed);
+  CLOSED_GROUPS.forEach(g=>{ if(showClosed)activeGroups.add(g); else activeGroups.delete(g); }); render(); };
+
+/* ============ Toast ============ */
+let toastT; function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=`<span class="tick">✓</span>${esc(msg)}`; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ============ Boot ============ */
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
+(async function(){ await loadLeads(); render(); })();
+</script>
+</body>
+</html>
