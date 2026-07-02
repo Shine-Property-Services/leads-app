@@ -63,11 +63,6 @@ header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#0
 .chip.on{color:#fff;border-color:transparent}
 .chip .cnt{opacity:.85;font-weight:700;font-size:11px}
 .tb-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);font-weight:700;margin-right:2px}
-.toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:600;cursor:pointer}
-.switch{width:36px;height:20px;border-radius:20px;background:var(--line);position:relative;transition:.15s}
-.switch::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.toggle.on .switch{background:var(--green)}
-.toggle.on .switch::after{left:18px}
 
 main{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
 .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
@@ -90,6 +85,7 @@ main{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
 .src-tag{font-size:10px;color:var(--faint);font-weight:600}
 .overdue{color:var(--red)!important}
 .ghl-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
+.mflag{font-size:9.5px;font-weight:700;color:var(--amber);border:1px solid var(--amber);padding:0 5px;border-radius:10px;margin-left:4px}
 .star{position:absolute;top:9px;right:9px;font-size:15px;line-height:1;color:var(--faint);padding:2px;border-radius:5px}
 .star:hover{background:var(--line-2);color:var(--amber)}
 .star.on{color:var(--amber)}
@@ -123,7 +119,6 @@ td .nm{font-weight:700;color:var(--ink)}
 .fld select:focus,.fld input:focus,.fld textarea:focus{border-color:var(--blue)}
 .fld textarea{resize:vertical;min-height:70px}
 .stagebox{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px 14px}
-.stagebox .pl{font-weight:800}
 .logcall{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px;margin-bottom:18px}
 .logcall .n{font-size:26px;font-weight:800;color:var(--navy);line-height:1}
 .logcall .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
@@ -133,6 +128,7 @@ td .nm{font-weight:700;color:var(--ink)}
 .timeline li .d{color:var(--muted);font-size:12px}
 .dr-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;background:#fafbfc}
 .grow{flex:1}
+.hint{font-size:11px;color:var(--faint);margin-top:6px}
 
 .modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(1,25,45,.45);opacity:0;pointer-events:none;transition:.18s}
 .modal.show{opacity:1;pointer-events:auto}
@@ -182,8 +178,6 @@ td .nm{font-weight:700;color:var(--ink)}
     </div>
     <span class="tb-label">Columns</span>
     <div class="chips" id="chips"></div>
-    <div class="spacer"></div>
-    <div class="toggle" id="otherToggle"><span class="switch"></span>Show won / archived</div>
   </div>
 </div>
 
@@ -209,8 +203,13 @@ td .nm{font-weight:700;color:var(--ink)}
       <button class="btn btn-primary btn-sm" id="logCallBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Log call</button>
     </div>
     <div class="fld">
-      <label>Pipeline stage (from GHL)</label>
+      <label>Current pipeline stage (GHL)</label>
       <div class="stagebox"><span class="pill" id="drStage"></span><span style="font-size:12px;color:var(--muted)" id="drStatusText"></span></div>
+    </div>
+    <div class="fld">
+      <label>Set status (manual override)</label>
+      <select id="drStatus"></select>
+      <div class="hint">Overrides the board column. Choosing "Job Booked" marks the lead Won and moves it to Won / Archived.</div>
       <button class="btn btn-amber btn-sm" id="drLaterBtn" style="margin-top:10px">☆ Mark "For later"</button>
     </div>
     <div class="fld"><label>Next follow-up</label><input type="date" id="drFollow"/></div>
@@ -256,10 +255,10 @@ td .nm{font-weight:700;color:var(--ink)}
 })();
 </script>
 <script>
-/* ============ Timezone: everything displays in Victoria (Pacific) ============ */
+/* ============ Everything displays in Victoria (Pacific) ============ */
 const TZ = 'America/Vancouver';
 
-/* ============ Column model (GHL stage-driven + a manual "For later" bucket) ============ */
+/* ============ Columns (GHL stage-driven + manual overrides) ============ */
 const COLUMNS = [
   {key:'new',        label:'New Leads',     color:'#1e73be', stages:['New Lead']},
   {key:'followup',   label:'For follow-up', color:'#0170b9', stages:['Awaiting Contact']},
@@ -268,41 +267,49 @@ const COLUMNS = [
   {key:'lost',       label:'Lost Leads',    color:'#8a94a6', stages:['Lost Lead']},
   {key:'later',      label:'For later',     color:'#d99a00', stages:[], manual:true},
   {key:'other',      label:'Won / Archived',color:'#1aa564', stages:['Job Booked','Completed Job','Archived Quote'], off:true},
+  {key:'repository', label:'Repository',    color:'#b0561f', stages:[], off:true},
 ];
-const COL = {}; COLUMNS.forEach(c=>COL[c.key]=c);
-const STAGE_TO_COL = {}; COLUMNS.forEach(c=>c.stages.forEach(s=>STAGE_TO_COL[s]=c.key));
-// fallback for leads with no GHL stage (sheet-only / manual), by their stored status
-const STATUS_TO_COL = {
-  'New Lead':'new','For Follow-up':'followup','No Contact Info':'followup',
+const COL={}; COLUMNS.forEach(c=>COL[c.key]=c);
+const STAGE_TO_COL={}; COLUMNS.forEach(c=>c.stages.forEach(s=>STAGE_TO_COL[s]=c.key));
+// leads sink to the bottom of these columns once a call is logged
+const DEMOTE_COLS=new Set(['followup','quotes_sent','lost']);
+
+// manual status vocabulary (from the Google-Sheet dropdowns)
+const SHEET_STATUSES=['New Lead','For Follow-up','For In-person','For Phone Quote','Drive-By Quote','Advised to send photos','Quote Sent','For Quote Follow-up','Undecided','Job Booked','Completed','Archived Quote','For Next Year','For later this year','No Contact Info','Not Serviceable','Declined','Tagged as Lost'];
+const REPO_STATUSES=new Set(['Declined','No Contact Info','Not Serviceable']);
+const WON_STATUSES=new Set(['Won','Job Booked','Completed']);
+const STATUS_TO_COL={
+  'New Lead':'new','For Follow-up':'followup',
   'For In-person':'quoting','For Phone Quote':'quoting','Drive-By Quote':'quoting','Advised to send photos':'quoting',
-  'Quote Sent':'quotes_sent','For Quote Follow-up':'quotes_sent','Undecided':'quotes_sent','Archived Quote':'other',
-  'Job Booked':'other','Completed':'other',
-  'For Next Year':'later','For later this year':'later',
-  'Declined':'lost','Tagged as Lost':'lost','Lost Lead':'lost','Not Serviceable':'lost',
+  'Quote Sent':'quotes_sent','For Quote Follow-up':'quotes_sent','Undecided':'quotes_sent',
+  'Tagged as Lost':'lost','For Next Year':'later','For later this year':'later',
+  'Won':'other','Job Booked':'other','Completed':'other','Archived Quote':'other',
+  'Declined':'repository','No Contact Info':'repository','Not Serviceable':'repository',
 };
+const COL_STATUS={new:'New Lead',followup:'For Follow-up',quoting:'For In-person',quotes_sent:'Quote Sent',lost:'Tagged as Lost'};
+
 function colOf(l){
+  const ms=l.manual_status;
+  if(ms){ if(REPO_STATUSES.has(ms)) return 'repository'; if(WON_STATUSES.has(ms)) return 'other'; if(STATUS_TO_COL[ms]) return STATUS_TO_COL[ms]; }
   if(l.manual_bucket==='later') return 'later';
   if(l.ghl_stage && STAGE_TO_COL[l.ghl_stage]) return STAGE_TO_COL[l.ghl_stage];
-  if(l.ghl_stage) return 'other';
-  return STATUS_TO_COL[(l.status||'').trim()] || 'other';
+  return 'other';
 }
 function colorOf(l){ return (COL[colOf(l)]||{}).color || 'var(--grey)'; }
-// column -> a representative status stored on manually-created leads
-const COL_STATUS = {new:'New Lead',followup:'For Follow-up',quoting:'For In-person',quotes_sent:'Quote Sent',lost:'Tagged as Lost',other:'Archived Quote'};
+function labelOf(l){ if(l.manual_status) return l.manual_status; if(l.manual_bucket==='later') return 'For later'; return l.ghl_stage||'—'; }
 
 /* ============ Data layer ============ */
 const API = window.__LEADS_API || null;
-const LS_KEY = 'shine_leads_overlay_v2';
-let LEADS = [];
-let overlay = {};
-try{ overlay = JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
-function persistOverlay(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(overlay)); }catch(e){} }
+const LS_KEY='shine_leads_overlay_v3';
+let LEADS=[], overlay={};
+try{ overlay=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
+function persistOverlay(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(overlay)); }catch(e){} }
 function applyOverlay(base){ return base.map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
 async function loadLeads(){
   if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); }
   else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); }
 }
-async function saveLead(id, patch){
+async function saveLead(id,patch){
   const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);
   overlay[id]={...(overlay[id]||{}),...patch}; persistOverlay();
   if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch})}); }catch(e){ toast('Saved locally — sync failed'); } }
@@ -317,9 +324,9 @@ async function createLead(rec){
 /* ============ State ============ */
 let view='board', search='';
 let activeCols=new Set(COLUMNS.filter(c=>!c.off).map(c=>c.key));
-let showOther=false, sortKey='name', sortDir=1, selected=null;
+let sortKey='name', sortDir=1, selected=null;
 
-/* ============ Helpers (all times in Victoria/Pacific) ============ */
+/* ============ Helpers (times in Victoria/Pacific) ============ */
 function fmtPhone(p){ if(!p) return ''; let d=(''+p).replace(/[^0-9]/g,''); if(d.length===11&&d[0]==='1') d=d.slice(1); if(d.length===10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; return p; }
 function telHref(p){ return (''+(p||'')).replace(/[^0-9+]/g,''); }
 function parseD(s){ if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; }
@@ -328,10 +335,10 @@ function fmtDateTime(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleS
 function relDays(s){ const d=parseD(s); if(!d) return null; return Math.floor((Date.now()-d)/86400000); }
 function esc(s){ return (''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function lastContact(l){ if(l.last_contact) return l.last_contact; if(l.calls&&l.calls.length) return l.calls.slice().sort().at(-1); return null; }
+function recency(l){ return +(parseD(l.stage_changed_at)||parseD(l.created_at)||0); }
 function setSynced(s){ const el=document.getElementById('syncedAt'); if(!s){el.textContent='—';return;} const d=parseD(s); el.textContent=d?d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'—'; }
-function stageLabelFor(l){ if(l.manual_bucket==='later') return 'For later'; return l.ghl_stage || l.status || '—'; }
 
-/* ============ Filtering ============ */
+/* ============ Filtering + column sort ============ */
 function visibleLeads(){
   const q=search.toLowerCase().trim();
   return LEADS.filter(l=>{
@@ -340,12 +347,23 @@ function visibleLeads(){
     return true;
   });
 }
+function sortColumn(items,colKey){
+  if(DEMOTE_COLS.has(colKey)){
+    return items.sort((a,b)=>{
+      const ca=lastContact(a)?1:0, cb=lastContact(b)?1:0;
+      if(ca!==cb) return ca-cb;                       // uncalled on top, called sink
+      if(ca===1) return (+(parseD(lastContact(a))||0))-(+(parseD(lastContact(b))||0)); // most-recently-called at very bottom
+      return recency(b)-recency(a);                   // newest added/moved first
+    });
+  }
+  return items.sort((a,b)=>recency(b)-recency(a));    // newest added/moved first
+}
 
 /* ============ Chips ============ */
 function renderChips(){
   const counts={}; LEADS.forEach(l=>{const c=colOf(l);counts[c]=(counts[c]||0)+1;});
   const el=document.getElementById('chips'); el.innerHTML='';
-  COLUMNS.filter(c=>c.key!=='other').forEach(c=>{
+  COLUMNS.forEach(c=>{
     const on=activeCols.has(c.key);
     const b=document.createElement('button');
     b.className='chip'+(on?' on':''); if(on) b.style.background=c.color;
@@ -360,11 +378,11 @@ function card(l){
   const lc=lastContact(l); const follow=l.next_follow_up; const fRel=follow?relDays(follow):null; const overdue=fRel!==null&&fRel>0;
   const src=(l.ghl_contact_id)?'<span class="ghl-dot" title="Synced from GHL"></span>':'';
   const isLater=l.manual_bucket==='later';
-  const label=stageLabelFor(l);
+  const mflag=l.manual_status?'<span class="mflag" title="Manual status">M</span>':'';
   return `<div class="card" draggable="true" data-id="${l.id}" style="border-left-color:${colorOf(l)}">
     <span class="star ${isLater?'on':''}" data-star="${l.id}" title="For later">${isLater?'★':'☆'}</span>
     <div class="nm">${src}${esc(l.name)||'<span style="color:var(--faint)">(no name)</span>'}</div>
-    <div><span class="pill" style="background:${colorOf(l)}22;color:${colorOf(l)}">${esc(label)}</span></div>
+    <div><span class="pill" style="background:${colorOf(l)}22;color:${colorOf(l)}">${esc(labelOf(l))}</span>${mflag}</div>
     <div class="meta">${l.phone?`<span>📞 ${esc(fmtPhone(l.phone))}</span>`:''}${l.email?`<span>✉️ ${esc(l.email)}</span>`:''}</div>
     <div class="foot">
       <span class="calls-badge">📞 ${l.times_called||0} call${(l.times_called||0)===1?'':'s'}${lc?` · ${fmtDate(lc)}`:''}</span>
@@ -376,7 +394,7 @@ function renderBoard(){
   const el=document.getElementById('boardView'); el.innerHTML='';
   const vis=visibleLeads();
   COLUMNS.filter(c=>activeCols.has(c.key)).forEach(c=>{
-    const items=vis.filter(l=>colOf(l)===c.key).sort((a,b)=>{const la=lastContact(a),lb=lastContact(b);return (lb?+parseD(lb):0)-(la?+parseD(la):0);});
+    const items=sortColumn(vis.filter(l=>colOf(l)===c.key), c.key);
     const col=document.createElement('div'); col.className='col'; col.dataset.group=c.key;
     col.innerHTML=`<div class="col-head"><span class="bar" style="background:${c.color}"></span><h3>${c.label}</h3><span class="num">${items.length}</span></div>
       <div class="col-body" data-group="${c.key}">${items.map(card).join('')||'<div style="color:var(--faint);font-size:12px;text-align:center;padding:14px">Nothing here</div>'}</div>`;
@@ -388,14 +406,14 @@ function renderBoard(){
 /* ============ Table ============ */
 function renderTable(){
   const el=document.getElementById('tableView'); let vis=visibleLeads();
-  const get={name:l=>(l.name||'').toLowerCase(),col:l=>COL[colOf(l)].label,times:l=>l.times_called||0,last:l=>+(parseD(lastContact(l))||0),follow:l=>+(parseD(l.next_follow_up)||0),source:l=>l.source||''};
+  const get={name:l=>(l.name||'').toLowerCase(),col:l=>COL[colOf(l)].label,times:l=>l.times_called||0,last:l=>+(parseD(lastContact(l))||0),follow:l=>+(parseD(l.next_follow_up)||0),added:l=>recency(l)};
   vis.sort((a,b)=>{const va=get[sortKey](a),vb=get[sortKey](b);return (va<vb?-1:va>vb?1:0)*sortDir;});
   const arrow=k=>sortKey===k?`<span class="arr">${sortDir>0?'▲':'▼'}</span>`:'';
   el.innerHTML=`<div class="table-wrap"><table><thead><tr>
     <th data-s="name">Name ${arrow('name')}</th><th>Contact</th>
     <th data-s="col">Column ${arrow('col')}</th><th data-s="times">Calls ${arrow('times')}</th>
     <th data-s="last">Last contact ${arrow('last')}</th><th data-s="follow">Follow-up ${arrow('follow')}</th>
-    <th data-s="source">Source ${arrow('source')}</th></tr></thead><tbody>
+    <th data-s="added">Added/moved ${arrow('added')}</th></tr></thead><tbody>
     ${vis.map(l=>{const lc=lastContact(l);const fRel=l.next_follow_up?relDays(l.next_follow_up):null;return `<tr class="row" data-id="${l.id}">
       <td><span class="nm">${esc(l.name)||'—'}</span></td>
       <td style="font-size:12.5px;color:var(--muted)">${l.phone?esc(fmtPhone(l.phone))+'<br>':''}${l.email?esc(l.email):''}</td>
@@ -403,9 +421,9 @@ function renderTable(){
       <td style="font-weight:700;color:var(--navy)">${l.times_called||0}</td>
       <td style="font-size:12.5px">${lc?fmtDate(lc):'<span style="color:var(--faint)">—</span>'}</td>
       <td style="font-size:12.5px" class="${fRel!==null&&fRel>0?'overdue':''}">${l.next_follow_up?fmtDate(l.next_follow_up):'<span style="color:var(--faint)">—</span>'}</td>
-      <td class="src-tag">${esc(l.source||'')}</td></tr>`;}).join('')}
+      <td style="font-size:12.5px;color:var(--muted)">${l.stage_changed_at?fmtDate(l.stage_changed_at):'—'}</td></tr>`;}).join('')}
     </tbody></table></div>`;
-  el.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1;}renderTable();});
+  el.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='last'||k==='added')?-1:1;}renderTable();});
   el.querySelectorAll('tr.row').forEach(tr=>tr.onclick=()=>openDrawer(tr.dataset.id));
 }
 
@@ -437,17 +455,16 @@ function wireDnd(){
     b.addEventListener('dragleave',()=>b.classList.remove('drag-over'));
     b.addEventListener('drop',e=>{e.preventDefault();b.classList.remove('drag-over');
       if(!dragId)return; const g=b.dataset.group; const l=LEADS.find(x=>x.id===dragId); if(!l)return;
-      const cur=colOf(l); if(cur===g)return;
-      if(g==='later'){ saveLead(l.id,{manual_bucket:'later'}); toast('Moved to For later'); render(); }
+      if(colOf(l)===g)return;
+      if(g==='later'){ saveLead(l.id,{manual_bucket:'later',stage_changed_at:new Date().toISOString()}); toast('Moved to For later'); render(); }
       else if(l.manual_bucket==='later'){ saveLead(l.id,{manual_bucket:null}); toast('Removed from For later'); render(); }
-      else{ toast('Pipeline stage is set in GHL — change it there'); }
+      else{ toast('Use the status dropdown to move a lead — or change its stage in GHL'); }
     });
   });
 }
 function toggleLater(id){
-  const l=LEADS.find(x=>x.id===id); if(!l)return;
-  const now=l.manual_bucket==='later';
-  saveLead(id,{manual_bucket: now?null:'later'});
+  const l=LEADS.find(x=>x.id===id); if(!l)return; const now=l.manual_bucket==='later';
+  saveLead(id, now?{manual_bucket:null}:{manual_bucket:'later',stage_changed_at:new Date().toISOString()});
   toast(now?'Removed from For later':'Marked For later');
   if(selected&&selected.id===id) refreshLaterBtn();
   render();
@@ -464,8 +481,10 @@ function openDrawer(id){
   if(l.phone) contact.innerHTML+=`<a href="sms:${telHref(l.phone)}">💬 Text</a>`;
   document.getElementById('drCalls').textContent=l.times_called||0;
   const lc=lastContact(l); document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
-  const stg=document.getElementById('drStage'); stg.textContent=l.ghl_stage||l.status||'—'; stg.style.background=colorOf(l)+'22'; stg.style.color=colorOf(l);
+  const stg=document.getElementById('drStage'); stg.textContent=l.ghl_stage||'—'; stg.style.background='#8a94a622'; stg.style.color='var(--ink)';
   document.getElementById('drStatusText').textContent=l.ghl_status?('· '+l.ghl_status):'';
+  const sel=document.getElementById('drStatus');
+  sel.innerHTML=`<option value="">— Follow GHL stage —</option>`+SHEET_STATUSES.map(s=>`<option ${s===l.manual_status?'selected':''}>${s}</option>`).join('');
   refreshLaterBtn();
   document.getElementById('drFollow').value=l.next_follow_up?(l.next_follow_up.slice(0,10)):'';
   document.getElementById('drNotes').value=l.notes||'';
@@ -474,29 +493,26 @@ function openDrawer(id){
   renderTimeline(l);
   document.getElementById('drawer').classList.add('show'); document.getElementById('scrim').classList.add('show');
 }
-function refreshLaterBtn(){
-  const b=document.getElementById('drLaterBtn'); if(!selected)return;
-  const on=selected.manual_bucket==='later';
-  b.textContent=on?'★ Remove from "For later"':'☆ Mark "For later"';
-  b.onclick=()=>toggleLater(selected.id);
-}
-function renderTimeline(l){
-  const tl=document.getElementById('drTimeline'); const calls=(l.calls||[]).slice().sort().reverse();
-  tl.innerHTML=calls.length?calls.map(c=>`<li>Contact attempt<div class="d">${fmtDateTime(c)}</div></li>`).join(''):'<li style="border:none;color:var(--faint)">No calls logged yet</li>';
-}
+function refreshLaterBtn(){ const b=document.getElementById('drLaterBtn'); if(!selected)return; const on=selected.manual_bucket==='later'; b.textContent=on?'★ Remove from "For later"':'☆ Mark "For later"'; b.onclick=()=>toggleLater(selected.id); }
+function renderTimeline(l){ const tl=document.getElementById('drTimeline'); const calls=(l.calls||[]).slice().sort().reverse(); tl.innerHTML=calls.length?calls.map(c=>`<li>Contact attempt<div class="d">${fmtDateTime(c)}</div></li>`).join(''):'<li style="border:none;color:var(--faint)">No calls logged yet</li>'; }
 function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('scrim').classList.remove('show'); selected=null; }
+
 document.getElementById('logCallBtn').onclick=()=>{
   if(!selected)return; const now=new Date().toISOString();
   const calls=(selected.calls||[]).concat([now]);
   saveLead(selected.id,{calls,times_called:(selected.times_called||0)+1,last_contact:now});
   document.getElementById('drCalls').textContent=selected.times_called;
   document.getElementById('drLast').textContent='Last: '+fmtDateTime(now);
-  renderTimeline(selected); toast('Call logged'); renderChips();
+  renderTimeline(selected); toast('Call logged'); render();
 };
 document.getElementById('drSave').onclick=()=>{
   if(!selected)return;
-  saveLead(selected.id,{notes:document.getElementById('drNotes').value,next_follow_up:document.getElementById('drFollow').value||null});
-  toast('Saved'); closeDrawer(); render();
+  let ms=document.getElementById('drStatus').value||null;
+  let msg='Saved';
+  if(ms==='Job Booked'){ ms='Won'; msg='Marked Won → moved to Won / Archived'; }
+  const patch={notes:document.getElementById('drNotes').value,next_follow_up:document.getElementById('drFollow').value||null,manual_status:ms};
+  if(ms!==(selected.manual_status||null)) patch.stage_changed_at=new Date().toISOString();  // moved → newest in its column
+  saveLead(selected.id,patch); toast(msg); closeDrawer(); render();
 };
 document.getElementById('drClose').onclick=closeDrawer;
 document.getElementById('scrim').onclick=closeDrawer;
@@ -504,7 +520,7 @@ document.getElementById('scrim').onclick=closeDrawer;
 /* ============ Add lead ============ */
 const addModal=document.getElementById('addModal');
 document.getElementById('addBtn').onclick=()=>{
-  document.getElementById('aCol').innerHTML=COLUMNS.filter(c=>c.key!=='other').map(c=>`<option value="${c.key}" ${c.key==='new'?'selected':''}>${c.label}</option>`).join('');
+  document.getElementById('aCol').innerHTML=COLUMNS.filter(c=>['new','followup','quoting','quotes_sent','lost','later'].includes(c.key)).map(c=>`<option value="${c.key}" ${c.key==='new'?'selected':''}>${c.label}</option>`).join('');
   document.getElementById('aName').value='';document.getElementById('aPhone').value='';document.getElementById('aEmail').value='';
   addModal.classList.add('show');
 };
@@ -513,8 +529,8 @@ addModal.onclick=e=>{if(e.target===addModal)addModal.classList.remove('show');};
 document.getElementById('aCreate').onclick=async()=>{
   const name=document.getElementById('aName').value.trim(); if(!name){toast('Enter a name');return;}
   const colKey=document.getElementById('aCol').value;
-  const rec={name,phone:document.getElementById('aPhone').value.trim(),email:document.getElementById('aEmail').value.trim(),notes:'',next_follow_up:null};
-  if(colKey==='later'){ rec.manual_bucket='later'; rec.status='New Lead'; } else { rec.status=COL_STATUS[colKey]||'New Lead'; }
+  const rec={name,phone:document.getElementById('aPhone').value.trim(),email:document.getElementById('aEmail').value.trim(),notes:'',next_follow_up:null,stage_changed_at:new Date().toISOString()};
+  if(colKey==='later'){ rec.manual_bucket='later'; } else { rec.manual_status=COL_STATUS[colKey]||'New Lead'; }
   await createLead(rec); addModal.classList.remove('show'); toast('Lead added'); render();
 };
 
@@ -527,11 +543,9 @@ document.getElementById('pullBtn').onclick=async()=>{
   span.textContent=old; btn.disabled=false; render();
 };
 
-/* ============ View / search / other toggle ============ */
+/* ============ View / search ============ */
 document.querySelectorAll('.viewtabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.viewtabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;render();});
 let searchT; document.getElementById('q').oninput=e=>{clearTimeout(searchT);searchT=setTimeout(()=>{search=e.target.value;render();},180);};
-const ot=document.getElementById('otherToggle');
-ot.onclick=()=>{ showOther=!showOther; ot.classList.toggle('on',showOther); if(showOther)activeCols.add('other'); else activeCols.delete('other'); render(); };
 
 /* ============ Toast ============ */
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=`<span class="tick">✓</span>${esc(msg)}`; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
