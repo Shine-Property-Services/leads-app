@@ -25,7 +25,6 @@ a{color:var(--blue-2);text-decoration:none}
 a:hover{text-decoration:underline}
 .hidden{display:none!important}
 
-/* ---------- Header ---------- */
 header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#023a63 100%);color:#fff;padding:0 18px;position:sticky;top:0;z-index:40;box-shadow:0 2px 12px rgba(1,53,93,.25)}
 .top-row{display:flex;align-items:center;gap:16px;height:60px;max-width:1500px;margin:0 auto}
 .brand{display:flex;align-items:baseline;gap:2px;font-weight:800;letter-spacing:.5px;font-size:22px;user-select:none}
@@ -45,11 +44,14 @@ header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#0
 .btn-ghost:hover{background:rgba(255,255,255,.2)}
 .btn-primary{background:var(--blue);color:#fff}
 .btn-primary:hover{background:var(--blue-2)}
+.btn-amber{background:var(--amber);color:#3a2800}
+.btn-amber:hover{filter:brightness(1.08)}
+.btn-out{background:#fff;border:1px solid var(--line);color:var(--muted)}
+.btn-out:hover{border-color:var(--muted)}
 .btn-sm{padding:6px 10px;font-size:12.5px}
 .synced{font-size:11.5px;color:#a8c6df;display:flex;flex-direction:column;line-height:1.3;text-align:right}
 .synced b{color:#fff;font-weight:600}
 
-/* ---------- Toolbar ---------- */
 .toolbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 18px;position:sticky;top:60px;z-index:30}
 .toolbar-inner{display:flex;align-items:center;gap:12px;max-width:1500px;margin:0 auto;flex-wrap:wrap}
 .viewtabs{display:flex;background:var(--bg);border-radius:9px;padding:3px}
@@ -59,7 +61,7 @@ header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#0
 .chip{padding:6px 12px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid var(--line);color:var(--muted);background:#fff;display:flex;align-items:center;gap:6px;transition:.12s}
 .chip .cdot{width:9px;height:9px;border-radius:50%}
 .chip.on{color:#fff;border-color:transparent}
-.chip .cnt{opacity:.8;font-weight:700;font-size:11px}
+.chip .cnt{opacity:.85;font-weight:700;font-size:11px}
 .tb-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);font-weight:700;margin-right:2px}
 .toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:600;cursor:pointer}
 .switch{width:36px;height:20px;border-radius:20px;background:var(--line);position:relative;transition:.15s}
@@ -67,7 +69,6 @@ header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#0
 .toggle.on .switch{background:var(--green)}
 .toggle.on .switch::after{left:18px}
 
-/* ---------- Board ---------- */
 main{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
 .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
 .col{flex:0 0 300px;background:#eef1f4;border-radius:var(--radius);display:flex;flex-direction:column;max-height:calc(100vh - 190px)}
@@ -77,10 +78,10 @@ main{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
 .col-head .num{margin-left:auto;background:#fff;color:var(--muted);font-weight:700;font-size:12px;padding:2px 9px;border-radius:20px}
 .col-body{overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:9px;flex:1;min-height:40px}
 .col-body.drag-over{background:#e2fbfa;outline:2px dashed var(--teal);outline-offset:-4px;border-radius:8px}
-.card{background:#fff;border-radius:10px;padding:11px 12px;box-shadow:var(--shadow);cursor:pointer;border:1px solid var(--line-2);transition:.12s;border-left:3px solid var(--grey)}
+.card{background:#fff;border-radius:10px;padding:11px 12px;box-shadow:var(--shadow);cursor:pointer;border:1px solid var(--line-2);transition:.12s;border-left:3px solid var(--grey);position:relative}
 .card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
 .card.dragging{opacity:.5}
-.card .nm{font-weight:700;color:var(--ink);font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.card .nm{font-weight:700;color:var(--ink);font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:6px;padding-right:22px}
 .card .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:5px}
 .card .meta span{display:inline-flex;align-items:center;gap:4px}
 .pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block}
@@ -89,8 +90,10 @@ main{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
 .src-tag{font-size:10px;color:var(--faint);font-weight:600}
 .overdue{color:var(--red)!important}
 .ghl-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
+.star{position:absolute;top:9px;right:9px;font-size:15px;line-height:1;color:var(--faint);padding:2px;border-radius:5px}
+.star:hover{background:var(--line-2);color:var(--amber)}
+.star.on{color:var(--amber)}
 
-/* ---------- Table ---------- */
 .table-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;border:1px solid var(--line)}
 table{border-collapse:collapse;width:100%;min-width:820px}
 th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:11px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
@@ -102,7 +105,6 @@ tr.row:hover td{background:#f2fbfb}
 td .nm{font-weight:700;color:var(--ink)}
 .count-note{font-size:12.5px;color:var(--muted);margin:2px 0 12px;font-weight:500}
 
-/* ---------- Drawer ---------- */
 .scrim{position:fixed;inset:0;background:rgba(1,25,45,.45);z-index:50;opacity:0;pointer-events:none;transition:.2s}
 .scrim.show{opacity:1;pointer-events:auto}
 .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:92vw;background:#fff;z-index:60;box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
@@ -120,6 +122,8 @@ td .nm{font-weight:700;color:var(--ink)}
 .fld select,.fld input,.fld textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);outline:none}
 .fld select:focus,.fld input:focus,.fld textarea:focus{border-color:var(--blue)}
 .fld textarea{resize:vertical;min-height:70px}
+.stagebox{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px 14px}
+.stagebox .pl{font-weight:800}
 .logcall{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:12px;margin-bottom:18px}
 .logcall .n{font-size:26px;font-weight:800;color:var(--navy);line-height:1}
 .logcall .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
@@ -129,9 +133,7 @@ td .nm{font-weight:700;color:var(--ink)}
 .timeline li .d{color:var(--muted);font-size:12px}
 .dr-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;background:#fafbfc}
 .grow{flex:1}
-.linkghl{font-size:12px;color:var(--faint);margin-top:4px;display:inline-block}
 
-/* ---------- Modal ---------- */
 .modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(1,25,45,.45);opacity:0;pointer-events:none;transition:.18s}
 .modal.show{opacity:1;pointer-events:auto}
 .modal .box{background:#fff;border-radius:16px;width:420px;max-width:92vw;box-shadow:var(--shadow-lg);overflow:hidden;transform:translateY(10px);transition:.18s}
@@ -140,16 +142,13 @@ td .nm{font-weight:700;color:var(--ink)}
 .modal .box .mbody{padding:20px 22px}
 .modal .box .mfoot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:#fafbfc}
 
-/* ---------- Toast ---------- */
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;font-size:13.5px;z-index:90;opacity:0;transition:.2s;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:9px}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast .tick{color:var(--teal)}
-
-/* ---------- Empty / spin ---------- */
 .empty{text-align:center;padding:60px 20px;color:var(--faint)}
 .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.gate{max-width:360px;margin:14vh auto;background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);padding:30px;text-align:center}
+.tzhint{font-size:11px;color:var(--faint);margin-top:6px}
 
 @media(max-width:640px){
   .brand-sub{display:none}
@@ -181,10 +180,10 @@ td .nm{font-weight:700;color:var(--ink)}
       <button data-view="board" class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1"/><rect x="10" y="3" width="6" height="12" rx="1"/><rect x="17" y="3" width="6" height="8" rx="1"/></svg>Board</button>
       <button data-view="table"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Table</button>
     </div>
-    <span class="tb-label">Show</span>
+    <span class="tb-label">Columns</span>
     <div class="chips" id="chips"></div>
     <div class="spacer"></div>
-    <div class="toggle" id="closedToggle"><span class="switch"></span>Include closed</div>
+    <div class="toggle" id="otherToggle"><span class="switch"></span>Show won / archived</div>
   </div>
 </div>
 
@@ -195,7 +194,6 @@ td .nm{font-weight:700;color:var(--ink)}
   <div id="emptyView" class="empty hidden"></div>
 </main>
 
-<!-- Drawer -->
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer">
   <div class="dr-head" style="position:relative">
@@ -210,18 +208,21 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="grow"><div class="lbl">Times called</div><div style="font-size:12.5px;color:var(--muted)" id="drLast">No contact logged</div></div>
       <button class="btn btn-primary btn-sm" id="logCallBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Log call</button>
     </div>
-    <div class="fld"><label>Status</label><select id="drStatus"></select></div>
+    <div class="fld">
+      <label>Pipeline stage (from GHL)</label>
+      <div class="stagebox"><span class="pill" id="drStage"></span><span style="font-size:12px;color:var(--muted)" id="drStatusText"></span></div>
+      <button class="btn btn-amber btn-sm" id="drLaterBtn" style="margin-top:10px">☆ Mark "For later"</button>
+    </div>
     <div class="fld"><label>Next follow-up</label><input type="date" id="drFollow"/></div>
     <div class="fld"><label>Notes</label><textarea id="drNotes" placeholder="Add a note…"></textarea></div>
-    <div class="fld" id="drGhlWrap"><label>GHL</label><div id="drGhl" style="font-size:13px;color:var(--muted)"></div></div>
-    <div class="fld"><label>Contact history</label><ul class="timeline" id="drTimeline"></ul></div>
+    <div class="fld" id="drSrcWrap"><label>Source</label><div id="drSrc" style="font-size:13px;color:var(--muted)"></div></div>
+    <div class="fld"><label>Contact history</label><ul class="timeline" id="drTimeline"></ul><div class="tzhint">Times shown in Victoria (Pacific) time</div></div>
   </div>
   <div class="dr-foot">
     <button class="btn btn-primary grow" id="drSave">Save changes</button>
   </div>
 </aside>
 
-<!-- Add modal -->
 <div class="modal" id="addModal">
   <div class="box">
     <h2>Add a lead</h2>
@@ -229,10 +230,10 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="fld"><label>Name</label><input id="aName" placeholder="Full name"/></div>
       <div class="fld"><label>Phone</label><input id="aPhone" placeholder="(250) 555-1234"/></div>
       <div class="fld"><label>Email</label><input id="aEmail" placeholder="name@email.com"/></div>
-      <div class="fld"><label>Status</label><select id="aStatus"></select></div>
+      <div class="fld"><label>Column</label><select id="aCol"></select></div>
     </div>
     <div class="mfoot">
-      <button class="btn btn-ghost" id="aCancel" style="color:var(--muted);border-color:var(--line)">Cancel</button>
+      <button class="btn btn-out" id="aCancel">Cancel</button>
       <button class="btn btn-primary" id="aCreate">Create lead</button>
     </div>
   </div>
@@ -255,132 +256,118 @@ td .nm{font-weight:700;color:var(--ink)}
 })();
 </script>
 <script>
-/* ============ Config / status model ============ */
-const GROUPS = [
-  {key:'new',    label:'New / To contact', color:'#1e73be', statuses:['New Lead','For Follow-up','No Contact Info']},
-  {key:'quoting',label:'Quoting',          color:'#0170b9', statuses:['For In-person','For Phone Quote','Drive-By Quote','Advised to send photos']},
-  {key:'quote',  label:'Quote sent',       color:'#12b3ad', statuses:['Quote Sent','For Quote Follow-up','Archived Quote','Undecided']},
-  {key:'later',  label:'Later',            color:'#d99a00', statuses:['For Next Year','For later this year']},
-  {key:'won',    label:'Won',              color:'#1aa564', statuses:['Job Booked','Completed']},
-  {key:'dead',   label:'Dead / Lost',      color:'#8a94a6', statuses:['Declined','Tagged as Lost','Lost Lead','Not Serviceable']},
-];
-const CLOSED_GROUPS = ['won','dead'];
-const STATUS_GROUP = {};   // status -> group key
-const STATUS_COLOR = {};   // status -> color
-GROUPS.forEach(g=>g.statuses.forEach(s=>{STATUS_GROUP[s]=g.key;STATUS_COLOR[s]=g.color;}));
-function normStatus(s){ s=(s||'').trim(); if(!s||!STATUS_GROUP[s]) return s||'New Lead'; return s; }
-function groupOf(s){ return STATUS_GROUP[normStatus(s)] || 'new'; }
-function colorOf(s){ return STATUS_COLOR[normStatus(s)] || 'var(--grey)'; }
-const ALL_STATUSES = GROUPS.flatMap(g=>g.statuses);
+/* ============ Timezone: everything displays in Victoria (Pacific) ============ */
+const TZ = 'America/Vancouver';
 
-/* ============ Data layer (API in prod, localStorage in preview) ============ */
-const API = window.__LEADS_API || null;       // set by Pages bootstrap in production
-const LS_KEY = 'shine_leads_overlay_v1';
+/* ============ Column model (GHL stage-driven + a manual "For later" bucket) ============ */
+const COLUMNS = [
+  {key:'new',        label:'New Leads',     color:'#1e73be', stages:['New Lead']},
+  {key:'followup',   label:'For follow-up', color:'#0170b9', stages:['Awaiting Contact']},
+  {key:'quoting',    label:'For Quoting',   color:'#0e8a86', stages:['In-Person Quote Booked']},
+  {key:'quotes_sent',label:'Quotes Sent',   color:'#12b3ad', stages:['Quote Sent']},
+  {key:'later',      label:'For later',     color:'#d99a00', stages:[], manual:true},
+  {key:'lost',       label:'Lost Leads',    color:'#8a94a6', stages:['Lost Lead']},
+  {key:'other',      label:'Won / Archived',color:'#1aa564', stages:['Job Booked','Completed Job','Archived Quote'], off:true},
+];
+const COL = {}; COLUMNS.forEach(c=>COL[c.key]=c);
+const STAGE_TO_COL = {}; COLUMNS.forEach(c=>c.stages.forEach(s=>STAGE_TO_COL[s]=c.key));
+// fallback for leads with no GHL stage (sheet-only / manual), by their stored status
+const STATUS_TO_COL = {
+  'New Lead':'new','For Follow-up':'followup','No Contact Info':'followup',
+  'For In-person':'quoting','For Phone Quote':'quoting','Drive-By Quote':'quoting','Advised to send photos':'quoting',
+  'Quote Sent':'quotes_sent','For Quote Follow-up':'quotes_sent','Undecided':'quotes_sent','Archived Quote':'other',
+  'Job Booked':'other','Completed':'other',
+  'For Next Year':'later','For later this year':'later',
+  'Declined':'lost','Tagged as Lost':'lost','Lost Lead':'lost','Not Serviceable':'lost',
+};
+function colOf(l){
+  if(l.manual_bucket==='later') return 'later';
+  if(l.ghl_stage && STAGE_TO_COL[l.ghl_stage]) return STAGE_TO_COL[l.ghl_stage];
+  if(l.ghl_stage) return 'other';
+  return STATUS_TO_COL[(l.status||'').trim()] || 'other';
+}
+function colorOf(l){ return (COL[colOf(l)]||{}).color || 'var(--grey)'; }
+// column -> a representative status stored on manually-created leads
+const COL_STATUS = {new:'New Lead',followup:'For Follow-up',quoting:'For In-person',quotes_sent:'Quote Sent',lost:'Tagged as Lost',other:'Archived Quote'};
+
+/* ============ Data layer ============ */
+const API = window.__LEADS_API || null;
+const LS_KEY = 'shine_leads_overlay_v2';
 let LEADS = [];
 let overlay = {};
 try{ overlay = JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
 function persistOverlay(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(overlay)); }catch(e){} }
-
-function applyOverlay(base){
-  return base.map(l=>{
-    const o = overlay[l.id];
-    return o ? {...l, ...o} : {...l};
-  });
-}
+function applyOverlay(base){ return base.map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
 async function loadLeads(){
-  if(API){
-    const r = await fetch(API.url+'&format=json');
-    const j = await r.json();
-    LEADS = applyOverlay(j.leads||[]);
-    setSynced(j.syncedAt);
-  }else{
-    LEADS = applyOverlay(window.SHINE_LEADS||[]);
-    setSynced(window.SHINE_SYNCED_AT);
-  }
+  if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); }
+  else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); }
 }
 async function saveLead(id, patch){
-  const l = LEADS.find(x=>x.id===id); if(l) Object.assign(l, patch);
-  overlay[id] = {...(overlay[id]||{}), ...patch};
-  persistOverlay();
-  if(API){
-    try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch})}); }
-    catch(e){ toast('Saved locally — sync failed'); }
-  }
+  const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);
+  overlay[id]={...(overlay[id]||{}),...patch}; persistOverlay();
+  if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch})}); }catch(e){ toast('Saved locally — sync failed'); } }
 }
 async function createLead(rec){
-  rec.id = 'new-'+Date.now();
-  rec.origin='manual'; rec.calls=[]; rec.times_called=0;
-  LEADS.unshift(rec);
-  overlay[rec.id] = rec; persistOverlay();
+  rec.id='new-'+Date.now(); rec.origin='manual'; rec.calls=[]; rec.times_called=0;
+  LEADS.unshift(rec); overlay[rec.id]=rec; persistOverlay();
   if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({create:rec})}); }catch(e){} }
   return rec;
 }
 
 /* ============ State ============ */
-let view='board';
-let search='';
-let activeGroups = new Set(GROUPS.filter(g=>!CLOSED_GROUPS.includes(g.key)).map(g=>g.key));
-let showClosed=false;
-let sortKey='name', sortDir=1;
-let selected=null;
+let view='board', search='';
+let activeCols=new Set(COLUMNS.filter(c=>!c.off).map(c=>c.key));
+let showOther=false, sortKey='name', sortDir=1, selected=null;
 
-/* ============ Helpers ============ */
+/* ============ Helpers (all times in Victoria/Pacific) ============ */
 function fmtPhone(p){ if(!p) return ''; let d=(''+p).replace(/[^0-9]/g,''); if(d.length===11&&d[0]==='1') d=d.slice(1); if(d.length===10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; return p; }
-function telHref(p){ let d=(''+(p||'')).replace(/[^0-9+]/g,''); return d; }
+function telHref(p){ return (''+(p||'')).replace(/[^0-9+]/g,''); }
 function parseD(s){ if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; }
-function fmtDate(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:d.getFullYear()!==new Date().getFullYear()?'2-digit':undefined}); }
-function fmtDateTime(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleString('en-CA',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function fmtDate(s){ const d=parseD(s); if(!d) return ''; const y=new Date().getFullYear(); const o={timeZone:TZ,month:'short',day:'numeric'}; if(d.getFullYear()!==y)o.year='2-digit'; return d.toLocaleDateString('en-CA',o); }
+function fmtDateTime(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
 function relDays(s){ const d=parseD(s); if(!d) return null; return Math.floor((Date.now()-d)/86400000); }
 function esc(s){ return (''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function lastContact(l){ if(l.last_contact) return l.last_contact; if(l.calls&&l.calls.length) return l.calls.slice().sort().at(-1); return null; }
-
-function setSynced(s){ const el=document.getElementById('syncedAt'); if(!s){el.textContent='—';return;} const d=parseD(s); el.textContent = d? d.toLocaleString('en-CA',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—'; }
+function setSynced(s){ const el=document.getElementById('syncedAt'); if(!s){el.textContent='—';return;} const d=parseD(s); el.textContent=d?d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'—'; }
+function stageLabelFor(l){ if(l.manual_bucket==='later') return 'For later'; return l.ghl_stage || l.status || '—'; }
 
 /* ============ Filtering ============ */
 function visibleLeads(){
   const q=search.toLowerCase().trim();
   return LEADS.filter(l=>{
-    const g=groupOf(l.status);
-    if(!activeGroups.has(g)) return false;
-    if(!showClosed && CLOSED_GROUPS.includes(g) && !activeGroups.has(g)) return false;
-    if(q){
-      const hay=((l.name||'')+' '+(l.phone||'')+' '+(l.email||'')).toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
+    if(!activeCols.has(colOf(l))) return false;
+    if(q){ const hay=((l.name||'')+' '+(l.phone||'')+' '+(l.email||'')).toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
 }
 
-/* ============ Render: chips ============ */
+/* ============ Chips ============ */
 function renderChips(){
-  const counts={}; LEADS.forEach(l=>{const g=groupOf(l.status);counts[g]=(counts[g]||0)+1;});
+  const counts={}; LEADS.forEach(l=>{const c=colOf(l);counts[c]=(counts[c]||0)+1;});
   const el=document.getElementById('chips'); el.innerHTML='';
-  GROUPS.forEach(g=>{
-    const on=activeGroups.has(g.key);
+  COLUMNS.filter(c=>c.key!=='other').forEach(c=>{
+    const on=activeCols.has(c.key);
     const b=document.createElement('button');
-    b.className='chip'+(on?' on':'');
-    if(on) b.style.background=g.color;
-    b.innerHTML=`<span class="cdot" style="background:${on?'#fff':g.color}"></span>${g.label}<span class="cnt">${counts[g.key]||0}</span>`;
-    b.onclick=()=>{ if(on)activeGroups.delete(g.key); else activeGroups.add(g.key); render(); };
+    b.className='chip'+(on?' on':''); if(on) b.style.background=c.color;
+    b.innerHTML=`<span class="cdot" style="background:${on?'#fff':c.color}"></span>${c.label}<span class="cnt">${counts[c.key]||0}</span>`;
+    b.onclick=()=>{ if(on)activeCols.delete(c.key); else activeCols.add(c.key); render(); };
     el.appendChild(b);
   });
 }
 
-/* ============ Render: board ============ */
+/* ============ Board ============ */
 function card(l){
-  const lc=lastContact(l); const rd=relDays(lc);
-  const follow=l.next_follow_up; const fRel=follow?relDays(follow):null;
-  const overdue = fRel!==null && fRel>0;
-  const src = (l.origin==='ghl'||l.origin==='ghl+sheet')?'<span class="ghl-dot" title="Synced from GHL"></span>':'';
-  return `<div class="card" draggable="true" data-id="${l.id}" style="border-left-color:${colorOf(l.status)}">
+  const lc=lastContact(l); const follow=l.next_follow_up; const fRel=follow?relDays(follow):null; const overdue=fRel!==null&&fRel>0;
+  const src=(l.ghl_contact_id)?'<span class="ghl-dot" title="Synced from GHL"></span>':'';
+  const isLater=l.manual_bucket==='later';
+  const label=stageLabelFor(l);
+  return `<div class="card" draggable="true" data-id="${l.id}" style="border-left-color:${colorOf(l)}">
+    <span class="star ${isLater?'on':''}" data-star="${l.id}" title="For later">${isLater?'★':'☆'}</span>
     <div class="nm">${src}${esc(l.name)||'<span style="color:var(--faint)">(no name)</span>'}</div>
-    <div><span class="pill" style="background:${colorOf(l.status)}22;color:${colorOf(l.status)}">${esc(l.status)}</span></div>
-    <div class="meta">
-      ${l.phone?`<span>📞 ${esc(fmtPhone(l.phone))}</span>`:''}
-      ${l.email?`<span>✉️ ${esc(l.email)}</span>`:''}
-    </div>
+    <div><span class="pill" style="background:${colorOf(l)}22;color:${colorOf(l)}">${esc(label)}</span></div>
+    <div class="meta">${l.phone?`<span>📞 ${esc(fmtPhone(l.phone))}</span>`:''}${l.email?`<span>✉️ ${esc(l.email)}</span>`:''}</div>
     <div class="foot">
-      <span class="calls-badge">📞 ${l.times_called||0} call${(l.times_called||0)===1?'':'s'}${lc?` · <span title="last contact">${fmtDate(lc)}</span>`:''}</span>
+      <span class="calls-badge">📞 ${l.times_called||0} call${(l.times_called||0)===1?'':'s'}${lc?` · ${fmtDate(lc)}`:''}</span>
       ${follow?`<span class="calls-badge ${overdue?'overdue':''}">⏰ ${fmtDate(follow)}</span>`:''}
     </div>
   </div>`;
@@ -388,62 +375,57 @@ function card(l){
 function renderBoard(){
   const el=document.getElementById('boardView'); el.innerHTML='';
   const vis=visibleLeads();
-  const shownGroups=GROUPS.filter(g=>activeGroups.has(g.key));
-  shownGroups.forEach(g=>{
-    const items=vis.filter(l=>groupOf(l.status)===g.key)
-      .sort((a,b)=>{ const la=lastContact(a),lb=lastContact(b); return (lb?+parseD(lb):0)-(la?+parseD(la):0); });
-    const col=document.createElement('div'); col.className='col'; col.dataset.group=g.key;
-    col.innerHTML=`<div class="col-head"><span class="bar" style="background:${g.color}"></span><h3>${g.label}</h3><span class="num">${items.length}</span></div>
-      <div class="col-body" data-group="${g.key}">${items.map(card).join('')||'<div style="color:var(--faint);font-size:12px;text-align:center;padding:14px">Nothing here</div>'}</div>`;
+  COLUMNS.filter(c=>activeCols.has(c.key)).forEach(c=>{
+    const items=vis.filter(l=>colOf(l)===c.key).sort((a,b)=>{const la=lastContact(a),lb=lastContact(b);return (lb?+parseD(lb):0)-(la?+parseD(la):0);});
+    const col=document.createElement('div'); col.className='col'; col.dataset.group=c.key;
+    col.innerHTML=`<div class="col-head"><span class="bar" style="background:${c.color}"></span><h3>${c.label}</h3><span class="num">${items.length}</span></div>
+      <div class="col-body" data-group="${c.key}">${items.map(card).join('')||'<div style="color:var(--faint);font-size:12px;text-align:center;padding:14px">Nothing here</div>'}</div>`;
     el.appendChild(col);
   });
-  wireCards();
-  wireDnd();
+  wireCards(); wireDnd();
 }
 
-/* ============ Render: table ============ */
+/* ============ Table ============ */
 function renderTable(){
-  const el=document.getElementById('tableView');
-  let vis=visibleLeads();
-  const get={name:l=>(l.name||'').toLowerCase(),status:l=>l.status||'',times:l=>l.times_called||0,last:l=>+ (parseD(lastContact(l))||0),follow:l=>+(parseD(l.next_follow_up)||0),source:l=>l.source||''};
-  vis.sort((a,b)=>{ const va=get[sortKey](a),vb=get[sortKey](b); return (va<vb?-1:va>vb?1:0)*sortDir; });
+  const el=document.getElementById('tableView'); let vis=visibleLeads();
+  const get={name:l=>(l.name||'').toLowerCase(),col:l=>COL[colOf(l)].label,times:l=>l.times_called||0,last:l=>+(parseD(lastContact(l))||0),follow:l=>+(parseD(l.next_follow_up)||0),source:l=>l.source||''};
+  vis.sort((a,b)=>{const va=get[sortKey](a),vb=get[sortKey](b);return (va<vb?-1:va>vb?1:0)*sortDir;});
   const arrow=k=>sortKey===k?`<span class="arr">${sortDir>0?'▲':'▼'}</span>`:'';
   el.innerHTML=`<div class="table-wrap"><table><thead><tr>
     <th data-s="name">Name ${arrow('name')}</th><th>Contact</th>
-    <th data-s="status">Status ${arrow('status')}</th>
-    <th data-s="times">Calls ${arrow('times')}</th>
-    <th data-s="last">Last contact ${arrow('last')}</th>
-    <th data-s="follow">Follow-up ${arrow('follow')}</th>
+    <th data-s="col">Column ${arrow('col')}</th><th data-s="times">Calls ${arrow('times')}</th>
+    <th data-s="last">Last contact ${arrow('last')}</th><th data-s="follow">Follow-up ${arrow('follow')}</th>
     <th data-s="source">Source ${arrow('source')}</th></tr></thead><tbody>
-    ${vis.map(l=>{const lc=lastContact(l);const fRel=l.next_follow_up?relDays(l.next_follow_up):null;
-      return `<tr class="row" data-id="${l.id}">
-        <td><span class="nm">${esc(l.name)||'—'}</span></td>
-        <td style="font-size:12.5px;color:var(--muted)">${l.phone?esc(fmtPhone(l.phone))+'<br>':''}${l.email?esc(l.email):''}</td>
-        <td><span class="pill" style="background:${colorOf(l.status)}22;color:${colorOf(l.status)}">${esc(l.status)}</span></td>
-        <td style="font-weight:700;color:var(--navy)">${l.times_called||0}</td>
-        <td style="font-size:12.5px">${lc?fmtDate(lc):'<span style="color:var(--faint)">—</span>'}</td>
-        <td style="font-size:12.5px" class="${fRel!==null&&fRel>0?'overdue':''}">${l.next_follow_up?fmtDate(l.next_follow_up):'<span style="color:var(--faint)">—</span>'}</td>
-        <td class="src-tag">${esc(l.source||'')}</td>
-      </tr>`;}).join('')}
+    ${vis.map(l=>{const lc=lastContact(l);const fRel=l.next_follow_up?relDays(l.next_follow_up):null;return `<tr class="row" data-id="${l.id}">
+      <td><span class="nm">${esc(l.name)||'—'}</span></td>
+      <td style="font-size:12.5px;color:var(--muted)">${l.phone?esc(fmtPhone(l.phone))+'<br>':''}${l.email?esc(l.email):''}</td>
+      <td><span class="pill" style="background:${colorOf(l)}22;color:${colorOf(l)}">${esc(COL[colOf(l)].label)}</span></td>
+      <td style="font-weight:700;color:var(--navy)">${l.times_called||0}</td>
+      <td style="font-size:12.5px">${lc?fmtDate(lc):'<span style="color:var(--faint)">—</span>'}</td>
+      <td style="font-size:12.5px" class="${fRel!==null&&fRel>0?'overdue':''}">${l.next_follow_up?fmtDate(l.next_follow_up):'<span style="color:var(--faint)">—</span>'}</td>
+      <td class="src-tag">${esc(l.source||'')}</td></tr>`;}).join('')}
     </tbody></table></div>`;
   el.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const k=th.dataset.s;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1;}renderTable();});
   el.querySelectorAll('tr.row').forEach(tr=>tr.onclick=()=>openDrawer(tr.dataset.id));
 }
 
-/* ============ Main render ============ */
+/* ============ Render ============ */
 function render(){
   renderChips();
   const vis=visibleLeads();
-  document.getElementById('countNote').textContent = `${vis.length} lead${vis.length===1?'':'s'} shown · ${LEADS.length} total`;
+  document.getElementById('countNote').textContent=`${vis.length} lead${vis.length===1?'':'s'} shown · ${LEADS.length} total`;
   const empty=document.getElementById('emptyView');
-  document.getElementById('boardView').classList.toggle('hidden',view!=='board');
-  document.getElementById('tableView').classList.toggle('hidden',view!=='table');
-  if(vis.length===0){ empty.classList.remove('hidden'); empty.innerHTML='No leads match your filters.'; document.getElementById('boardView').classList.add('hidden'); document.getElementById('tableView').classList.add('hidden'); }
+  const bv=document.getElementById('boardView'), tv=document.getElementById('tableView');
+  bv.classList.toggle('hidden',view!=='board'); tv.classList.toggle('hidden',view!=='table');
+  if(vis.length===0){ empty.classList.remove('hidden'); empty.textContent='No leads match your filters.'; bv.classList.add('hidden'); tv.classList.add('hidden'); }
   else{ empty.classList.add('hidden'); if(view==='board')renderBoard(); else renderTable(); }
 }
 
 /* ============ Cards / DnD ============ */
-function wireCards(){ document.querySelectorAll('.card').forEach(c=>{ c.onclick=()=>openDrawer(c.dataset.id); }); }
+function wireCards(){
+  document.querySelectorAll('.card').forEach(c=>{ c.onclick=e=>{ if(e.target.dataset.star!==undefined) return; openDrawer(c.dataset.id); }; });
+  document.querySelectorAll('.star').forEach(s=>{ s.onclick=e=>{ e.stopPropagation(); toggleLater(s.dataset.star); }; });
+}
 let dragId=null;
 function wireDnd(){
   document.querySelectorAll('.card').forEach(c=>{
@@ -455,101 +437,105 @@ function wireDnd(){
     b.addEventListener('dragleave',()=>b.classList.remove('drag-over'));
     b.addEventListener('drop',e=>{e.preventDefault();b.classList.remove('drag-over');
       if(!dragId)return; const g=b.dataset.group; const l=LEADS.find(x=>x.id===dragId); if(!l)return;
-      if(groupOf(l.status)===g)return;
-      const target=GROUPS.find(x=>x.key===g); const newStatus=target.statuses.includes(l.status)?l.status:target.statuses[0];
-      saveLead(dragId,{status:newStatus}); toast(`Moved to ${newStatus}`); render();
+      const cur=colOf(l); if(cur===g)return;
+      if(g==='later'){ saveLead(l.id,{manual_bucket:'later'}); toast('Moved to For later'); render(); }
+      else if(l.manual_bucket==='later'){ saveLead(l.id,{manual_bucket:null}); toast('Removed from For later'); render(); }
+      else{ toast('Pipeline stage is set in GHL — change it there'); }
     });
   });
+}
+function toggleLater(id){
+  const l=LEADS.find(x=>x.id===id); if(!l)return;
+  const now=l.manual_bucket==='later';
+  saveLead(id,{manual_bucket: now?null:'later'});
+  toast(now?'Removed from For later':'Marked For later');
+  if(selected&&selected.id===id) refreshLaterBtn();
+  render();
 }
 
 /* ============ Drawer ============ */
 function openDrawer(id){
   const l=LEADS.find(x=>x.id===id); if(!l)return; selected=l;
   document.getElementById('drName').textContent=l.name||'(no name)';
-  const pill=document.getElementById('drStatusPill'); pill.textContent=l.status; pill.style.background=colorOf(l.status); pill.style.color='#04322f';
+  const pill=document.getElementById('drStatusPill'); pill.textContent=COL[colOf(l)].label; pill.style.background=colorOf(l); pill.style.color='#fff';
   const contact=document.getElementById('drContact'); contact.innerHTML='';
   if(l.phone) contact.innerHTML+=`<a href="tel:${telHref(l.phone)}">📞 ${esc(fmtPhone(l.phone))}</a>`;
   if(l.email) contact.innerHTML+=`<a href="mailto:${esc(l.email)}">✉️ Email</a>`;
   if(l.phone) contact.innerHTML+=`<a href="sms:${telHref(l.phone)}">💬 Text</a>`;
   document.getElementById('drCalls').textContent=l.times_called||0;
-  const lc=lastContact(l);
-  document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
-  const sel=document.getElementById('drStatus'); sel.innerHTML=ALL_STATUSES.map(s=>`<option ${s===normStatus(l.status)?'selected':''}>${s}</option>`).join('');
-  document.getElementById('drFollow').value = l.next_follow_up? (l.next_follow_up.slice(0,10)) : '';
-  document.getElementById('drNotes').value = l.notes||'';
-  const ghlWrap=document.getElementById('drGhlWrap'); const ghl=document.getElementById('drGhl');
-  if(l.ghl_contact_id){ ghlWrap.classList.remove('hidden'); ghl.innerHTML=`Synced from GHL${l.ghl_stage?` · stage: <b>${esc(l.ghl_stage)}</b>`:''}${l.source?`<br><span class="src-tag">tags: ${esc(l.source)}</span>`:''}`; }
-  else{ ghlWrap.classList.add('hidden'); }
+  const lc=lastContact(l); document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
+  const stg=document.getElementById('drStage'); stg.textContent=l.ghl_stage||l.status||'—'; stg.style.background=colorOf(l)+'22'; stg.style.color=colorOf(l);
+  document.getElementById('drStatusText').textContent=l.ghl_status?('· '+l.ghl_status):'';
+  refreshLaterBtn();
+  document.getElementById('drFollow').value=l.next_follow_up?(l.next_follow_up.slice(0,10)):'';
+  document.getElementById('drNotes').value=l.notes||'';
+  const srcWrap=document.getElementById('drSrcWrap');
+  if(l.source){ srcWrap.classList.remove('hidden'); document.getElementById('drSrc').textContent=l.source; } else srcWrap.classList.add('hidden');
   renderTimeline(l);
-  document.getElementById('drawer').classList.add('show');
-  document.getElementById('scrim').classList.add('show');
+  document.getElementById('drawer').classList.add('show'); document.getElementById('scrim').classList.add('show');
+}
+function refreshLaterBtn(){
+  const b=document.getElementById('drLaterBtn'); if(!selected)return;
+  const on=selected.manual_bucket==='later';
+  b.textContent=on?'★ Remove from "For later"':'☆ Mark "For later"';
+  b.onclick=()=>toggleLater(selected.id);
 }
 function renderTimeline(l){
   const tl=document.getElementById('drTimeline'); const calls=(l.calls||[]).slice().sort().reverse();
-  tl.innerHTML = calls.length? calls.map(c=>`<li>Contact attempt<div class="d">${fmtDateTime(c)}</div></li>`).join('') : '<li style="border:none;color:var(--faint)">No calls logged yet</li>';
+  tl.innerHTML=calls.length?calls.map(c=>`<li>Contact attempt<div class="d">${fmtDateTime(c)}</div></li>`).join(''):'<li style="border:none;color:var(--faint)">No calls logged yet</li>';
 }
 function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('scrim').classList.remove('show'); selected=null; }
-
 document.getElementById('logCallBtn').onclick=()=>{
   if(!selected)return; const now=new Date().toISOString();
   const calls=(selected.calls||[]).concat([now]);
-  saveLead(selected.id,{calls, times_called:(selected.times_called||0)+1, last_contact:now});
+  saveLead(selected.id,{calls,times_called:(selected.times_called||0)+1,last_contact:now});
   document.getElementById('drCalls').textContent=selected.times_called;
   document.getElementById('drLast').textContent='Last: '+fmtDateTime(now);
-  renderTimeline(selected); toast('Call logged'); renderCurrentSoft();
+  renderTimeline(selected); toast('Call logged'); renderChips();
 };
 document.getElementById('drSave').onclick=()=>{
   if(!selected)return;
-  const patch={ status:document.getElementById('drStatus').value, notes:document.getElementById('drNotes').value,
-    next_follow_up:document.getElementById('drFollow').value||null };
-  saveLead(selected.id,patch); toast('Saved'); closeDrawer(); render();
+  saveLead(selected.id,{notes:document.getElementById('drNotes').value,next_follow_up:document.getElementById('drFollow').value||null});
+  toast('Saved'); closeDrawer(); render();
 };
 document.getElementById('drClose').onclick=closeDrawer;
 document.getElementById('scrim').onclick=closeDrawer;
 
-function renderCurrentSoft(){ /* light refresh of counts without closing drawer */ renderChips(); }
-
 /* ============ Add lead ============ */
 const addModal=document.getElementById('addModal');
 document.getElementById('addBtn').onclick=()=>{
-  document.getElementById('aStatus').innerHTML=ALL_STATUSES.map(s=>`<option ${s==='New Lead'?'selected':''}>${s}</option>`).join('');
+  document.getElementById('aCol').innerHTML=COLUMNS.filter(c=>c.key!=='other').map(c=>`<option value="${c.key}" ${c.key==='new'?'selected':''}>${c.label}</option>`).join('');
   document.getElementById('aName').value='';document.getElementById('aPhone').value='';document.getElementById('aEmail').value='';
   addModal.classList.add('show');
 };
 document.getElementById('aCancel').onclick=()=>addModal.classList.remove('show');
 addModal.onclick=e=>{if(e.target===addModal)addModal.classList.remove('show');};
 document.getElementById('aCreate').onclick=async()=>{
-  const name=document.getElementById('aName').value.trim();
-  if(!name){toast('Enter a name');return;}
-  await createLead({name,phone:document.getElementById('aPhone').value.trim(),email:document.getElementById('aEmail').value.trim(),status:document.getElementById('aStatus').value,next_follow_up:null,notes:''});
-  addModal.classList.remove('show'); toast('Lead added'); render();
+  const name=document.getElementById('aName').value.trim(); if(!name){toast('Enter a name');return;}
+  const colKey=document.getElementById('aCol').value;
+  const rec={name,phone:document.getElementById('aPhone').value.trim(),email:document.getElementById('aEmail').value.trim(),notes:'',next_follow_up:null};
+  if(colKey==='later'){ rec.manual_bucket='later'; rec.status='New Lead'; } else { rec.status=COL_STATUS[colKey]||'New Lead'; }
+  await createLead(rec); addModal.classList.remove('show'); toast('Lead added'); render();
 };
 
 /* ============ Pull now ============ */
 document.getElementById('pullBtn').onclick=async()=>{
   const btn=document.getElementById('pullBtn'); const span=btn.querySelector('span'); const old=span.textContent;
   span.innerHTML='<span class="spin"></span> Pulling…'; btn.disabled=true;
-  try{
-    if(API){ await fetch(API.url+'&action=pull',{method:'POST'}); await loadLeads(); toast('Pulled latest from GHL'); }
-    else{ await new Promise(r=>setTimeout(r,900)); toast('Preview mode — connect backend to pull live'); }
-  }catch(e){ toast('Pull failed'); }
+  try{ if(API){ await fetch(API.url+'&action=pull',{method:'POST'}); await loadLeads(); toast('Pulled latest from GHL'); } else{ await new Promise(r=>setTimeout(r,900)); toast('Preview mode — connect backend to pull live'); } }
+  catch(e){ toast('Pull failed'); }
   span.textContent=old; btn.disabled=false; render();
 };
 
-/* ============ View tabs / search / closed ============ */
-document.querySelectorAll('.viewtabs button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.viewtabs button').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); view=b.dataset.view; render();
-});
+/* ============ View / search / other toggle ============ */
+document.querySelectorAll('.viewtabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.viewtabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;render();});
 let searchT; document.getElementById('q').oninput=e=>{clearTimeout(searchT);searchT=setTimeout(()=>{search=e.target.value;render();},180);};
-const ct=document.getElementById('closedToggle');
-ct.onclick=()=>{ showClosed=!showClosed; ct.classList.toggle('on',showClosed);
-  CLOSED_GROUPS.forEach(g=>{ if(showClosed)activeGroups.add(g); else activeGroups.delete(g); }); render(); };
+const ot=document.getElementById('otherToggle');
+ot.onclick=()=>{ showOther=!showOther; ot.classList.toggle('on',showOther); if(showOther)activeCols.add('other'); else activeCols.delete('other'); render(); };
 
 /* ============ Toast ============ */
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=`<span class="tick">✓</span>${esc(msg)}`; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
 
-/* ============ Boot ============ */
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
 (async function(){ await loadLeads(); render(); })();
 </script>
