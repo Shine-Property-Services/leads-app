@@ -217,6 +217,7 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="hint">Overrides the board column. Choosing "Job Booked" marks the lead Won and moves it to Won / Archived.</div>
       <button class="btn btn-amber btn-sm" id="drLaterBtn" style="margin-top:10px">☆ Mark "For later"</button>
     </div>
+    <div class="fld"><label>Added as new lead (GHL)</label><div id="drAdded" style="font-size:13px;color:var(--text)"></div></div>
     <div class="fld"><label>Next follow-up</label><input type="date" id="drFollow"/></div>
     <div class="fld"><label>Notes</label><textarea id="drNotes" placeholder="Add a note…"></textarea></div>
     <div class="fld" id="drSrcWrap"><label>Source</label><div id="drSrc" style="font-size:13px;color:var(--muted)"></div></div>
@@ -299,6 +300,7 @@ function colOf(l){
   const ms=l.manual_status;
   if(ms){ if(REPO_STATUSES.has(ms)) return 'repository'; if(WON_STATUSES.has(ms)) return 'other'; if(STATUS_TO_COL[ms]) return STATUS_TO_COL[ms]; }
   if(l.manual_bucket==='later') return 'later';
+  if(l.ghl_stage==='Lost Lead' && (l.ghl_status||'').toLowerCase()==='abandoned') return 'repository';  // dead in GHL → do-not-contact archive
   if(l.ghl_stage && STAGE_TO_COL[l.ghl_stage]) return STAGE_TO_COL[l.ghl_stage];
   return 'other';
 }
@@ -508,6 +510,13 @@ function openDrawer(id){
   const sel=document.getElementById('drStatus');
   sel.innerHTML=`<option value="">— Follow GHL stage —</option>`+SHEET_STATUSES.map(s=>`<option ${s===l.manual_status?'selected':''}>${s}</option>`).join('');
   refreshLaterBtn();
+  // "Added as new lead" — original + every re-add (never overwritten)
+  const nlh=Array.isArray(l.new_lead_history)?l.new_lead_history:[];
+  let addedHtml;
+  if(nlh.length){ addedHtml=nlh.slice().sort().map((t,i)=>`<div>${i===0?'🟢 First added':'🔄 Re-added'}: ${esc(fmtDateTime(t))}</div>`).join(''); }
+  else if(l.created_at){ addedHtml='🟢 '+esc(fmtDateTime(l.created_at)); }
+  else addedHtml='<span style="color:var(--faint)">—</span>';
+  document.getElementById('drAdded').innerHTML=addedHtml;
   document.getElementById('drFollow').value=l.next_follow_up?(l.next_follow_up.slice(0,10)):'';
   document.getElementById('drNotes').value=l.notes||'';
   const srcWrap=document.getElementById('drSrcWrap');
