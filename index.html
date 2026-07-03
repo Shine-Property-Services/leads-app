@@ -126,6 +126,9 @@ td .nm{font-weight:700;color:var(--ink)}
 .timeline li{padding:8px 0 8px 20px;position:relative;font-size:13px;color:var(--text);border-left:2px solid var(--line);margin-left:4px}
 .timeline li::before{content:"";position:absolute;left:-5px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--teal)}
 .timeline li .d{color:var(--muted);font-size:12px}
+.icobtn{color:var(--faint);padding:2px 6px;border-radius:6px;font-size:14px;line-height:1}
+.icobtn:hover{background:var(--line-2);color:var(--navy)}
+.calledit{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;margin-bottom:6px;font-size:13px}
 .dr-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;background:#fafbfc}
 .grow{flex:1}
 .hint{font-size:11px;color:var(--faint);margin-top:6px}
@@ -338,7 +341,14 @@ function fmtDate(s){ if(!s) return '';
 function fmtDateTime(s){ if(!s) return ''; if(isDateOnly(s)) return fmtDate(s)+' (date only)'; const d=parseD(s); if(!d) return ''; return d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
 function relDays(s){ const d=parseD(s); if(!d) return null; return Math.floor((Date.now()-d)/86400000); }
 function esc(s){ return (''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function lastContact(l){ if(l.last_contact) return l.last_contact; if(l.calls&&l.calls.length) return l.calls.slice().sort().at(-1); return null; }
+// a call entry is either an ISO/date string (legacy) or {ts, note}
+function callTs(c){ return (c && typeof c==='object') ? c.ts : c; }
+function callNote(c){ return (c && typeof c==='object') ? (c.note||'') : ''; }
+function lastContact(l){ if(l.last_contact) return l.last_contact; if(l.calls&&l.calls.length) return l.calls.map(callTs).sort().at(-1); return null; }
+// stored ts -> value for a <input type=datetime-local> in Victoria wall-clock
+function toPacificInput(ts){ if(isDateOnly(ts)) return ts+'T00:00'; const d=parseD(ts); if(!d) return ''; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}T${g('hour')}:${g('minute')}`; }
+// datetime-local (entered as Victoria wall-clock) -> unambiguous ISO with the Pacific offset for that date
+function pacificIso(dtLocal){ const [dp,tp]=dtLocal.split('T'); const [y,mo,d]=dp.split('-').map(Number); const [h,mi]=tp.split(':').map(Number); const guess=new Date(Date.UTC(y,mo-1,d,h,mi)); const nm=new Intl.DateTimeFormat('en-US',{timeZone:TZ,timeZoneName:'shortOffset'}).formatToParts(guess).find(x=>x.type==='timeZoneName').value; const m=nm.match(/GMT([+-]\d+)(?::(\d+))?/); let oh=m?parseInt(m[1],10):-8; const om=m&&m[2]?parseInt(m[2],10):0; const sign=oh<0?'-':'+'; return `${dp}T${tp}:00${sign}${String(Math.abs(oh)).padStart(2,'0')}:${String(om).padStart(2,'0')}`; }
 function recency(l){ return +(parseD(l.stage_changed_at)||parseD(l.created_at)||0); }
 function setSynced(s){ const el=document.getElementById('syncedAt'); if(!s){el.textContent='—';return;} const d=parseD(s); el.textContent=d?d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'—'; }
 
@@ -476,7 +486,7 @@ function toggleLater(id){
 
 /* ============ Drawer ============ */
 function openDrawer(id){
-  const l=LEADS.find(x=>x.id===id); if(!l)return; selected=l;
+  const l=LEADS.find(x=>x.id===id); if(!l)return; selected=l; editingCall=-1;
   document.getElementById('drName').textContent=l.name||'(no name)';
   const pill=document.getElementById('drStatusPill'); pill.textContent=COL[colOf(l)].label; pill.style.background=colorOf(l); pill.style.color='#fff';
   const contact=document.getElementById('drContact'); contact.innerHTML='';
@@ -498,7 +508,42 @@ function openDrawer(id){
   document.getElementById('drawer').classList.add('show'); document.getElementById('scrim').classList.add('show');
 }
 function refreshLaterBtn(){ const b=document.getElementById('drLaterBtn'); if(!selected)return; const on=selected.manual_bucket==='later'; b.textContent=on?'★ Remove from "For later"':'☆ Mark "For later"'; b.onclick=()=>toggleLater(selected.id); }
-function renderTimeline(l){ const tl=document.getElementById('drTimeline'); const calls=(l.calls||[]).slice().sort().reverse(); tl.innerHTML=calls.length?calls.map(c=>`<li>Contact attempt<div class="d">${fmtDateTime(c)}</div></li>`).join(''):'<li style="border:none;color:var(--faint)">No calls logged yet</li>'; }
+let editingCall=-1;
+function renderTimeline(l){
+  const tl=document.getElementById('drTimeline');
+  const items=(l.calls||[]).map((c,i)=>({c,i})).sort((a,b)=> callTs(a.c)<callTs(b.c)?1:-1);   // newest first
+  if(!items.length){ tl.innerHTML='<li style="border:none;color:var(--faint)">No calls logged yet</li>'; return; }
+  tl.innerHTML=items.map(({c,i})=>{
+    if(i===editingCall){
+      return `<li><input type="datetime-local" class="calledit" id="ecDt" value="${toPacificInput(callTs(c))}"/>
+        <input type="text" class="calledit" id="ecNote" placeholder="Note (optional)" value="${esc(callNote(c))}"/>
+        <div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-primary btn-sm" data-savecall="${i}">Save</button><button class="btn btn-out btn-sm" data-cancelcall="1">Cancel</button></div></li>`;
+    }
+    return `<li><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div><span>${esc(callNote(c))||'Contact attempt'}</span><div class="d">${fmtDateTime(callTs(c))}</div></div>
+      <div style="white-space:nowrap"><button class="icobtn" data-editcall="${i}" title="Edit">&#9998;</button><button class="icobtn" data-delcall="${i}" title="Delete">&times;</button></div>
+    </div></li>`;
+  }).join('');
+  tl.querySelectorAll('[data-editcall]').forEach(b=>b.onclick=()=>{ editingCall=+b.dataset.editcall; renderTimeline(l); });
+  tl.querySelectorAll('[data-cancelcall]').forEach(b=>b.onclick=()=>{ editingCall=-1; renderTimeline(l); });
+  tl.querySelectorAll('[data-delcall]').forEach(b=>b.onclick=()=>{
+    const calls=(l.calls||[]).slice(); calls.splice(+b.dataset.delcall,1);
+    const lc=calls.length?calls.map(callTs).sort().at(-1):null;
+    saveLead(l.id,{calls,times_called:calls.length,last_contact:lc}); editingCall=-1;
+    document.getElementById('drCalls').textContent=l.times_called;
+    document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
+    renderTimeline(l); render(); toast('Call removed');
+  });
+  tl.querySelectorAll('[data-savecall]').forEach(b=>b.onclick=()=>{
+    const dt=document.getElementById('ecDt').value; if(!dt){ toast('Pick a date & time'); return; }
+    const note=document.getElementById('ecNote').value.trim();
+    const calls=(l.calls||[]).slice(); calls[+b.dataset.savecall]= note?{ts:pacificIso(dt),note}:pacificIso(dt);
+    const lc=calls.map(callTs).sort().at(-1);
+    saveLead(l.id,{calls,last_contact:lc}); editingCall=-1;
+    document.getElementById('drLast').textContent='Last: '+fmtDateTime(lc);
+    renderTimeline(l); render(); toast('Call updated');
+  });
+}
 function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('scrim').classList.remove('show'); selected=null; }
 
 document.getElementById('logCallBtn').onclick=()=>{
