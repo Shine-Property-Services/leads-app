@@ -48,6 +48,8 @@ header.top{background:linear-gradient(120deg,var(--navy) 0%,var(--navy-2) 55%,#0
 .btn-amber:hover{filter:brightness(1.08)}
 .btn-out{background:#fff;border:1px solid var(--line);color:var(--muted)}
 .btn-out:hover{border-color:var(--muted)}
+.btn-danger{background:#fff;border:1px solid #eab9b3;color:var(--red)}
+.btn-danger:hover{background:#fdecea;border-color:var(--red)}
 .btn-sm{padding:6px 10px;font-size:12.5px}
 .synced{font-size:11.5px;color:#a8c6df;display:flex;flex-direction:column;line-height:1.3;text-align:right}
 .synced b{color:#fff;font-weight:600}
@@ -221,6 +223,7 @@ td .nm{font-weight:700;color:var(--ink)}
     <div class="fld"><label>Contact history</label><ul class="timeline" id="drTimeline"></ul><div class="tzhint">Times shown in Victoria (Pacific) time</div></div>
   </div>
   <div class="dr-foot">
+    <button class="btn btn-danger" id="drDelete">Delete</button>
     <button class="btn btn-primary grow" id="drSave">Save changes</button>
   </div>
 </aside>
@@ -308,7 +311,7 @@ const LS_KEY='shine_leads_overlay_v3';
 let LEADS=[], overlay={};
 try{ overlay=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
 function persistOverlay(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(overlay)); }catch(e){} }
-function applyOverlay(base){ return base.map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
+function applyOverlay(base){ return base.filter(l=>!(overlay[l.id]&&overlay[l.id].hidden)).map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
 async function loadLeads(){
   if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); lastSyncedAt=j.syncedAt; }
   else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); lastSyncedAt=window.SHINE_SYNCED_AT||null; }
@@ -317,6 +320,11 @@ async function saveLead(id,patch){
   const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);
   overlay[id]={...(overlay[id]||{}),...patch}; persistOverlay();
   if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch})}); }catch(e){ toast('Saved locally — sync failed'); } }
+}
+async function deleteLead(id){   // soft-delete: hide in the app (sync respects it); GHL record is untouched
+  overlay[id]={...(overlay[id]||{}),hidden:true}; persistOverlay();
+  LEADS=LEADS.filter(x=>x.id!==id);
+  if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch:{hidden:true}})}); }catch(e){ toast('Removed locally — sync failed'); } }
 }
 async function createLead(rec){
   rec.id='new-'+Date.now(); rec.origin='manual'; rec.calls=[]; rec.times_called=0;
@@ -562,6 +570,14 @@ document.getElementById('drSave').onclick=()=>{
   const patch={notes:document.getElementById('drNotes').value,next_follow_up:document.getElementById('drFollow').value||null,manual_status:ms};
   if(ms!==(selected.manual_status||null)) patch.stage_changed_at=new Date().toISOString();  // moved → newest in its column
   saveLead(selected.id,patch); toast(msg); closeDrawer(); render();
+};
+document.getElementById('drDelete').onclick=()=>{
+  if(!selected)return;
+  const nm=selected.name||'this lead';
+  const extra=selected.ghl_contact_id?'\n\nThis removes it from the app only — it still exists in GHL, so delete/lose it there too if you want it gone from the CRM.':'';
+  if(!confirm('Delete "'+nm+'"?'+extra)) return;
+  const id=selected.id;
+  deleteLead(id).then(()=>{ toast('Lead deleted'); closeDrawer(); render(); });
 };
 document.getElementById('drClose').onclick=closeDrawer;
 document.getElementById('scrim').onclick=closeDrawer;
