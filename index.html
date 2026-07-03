@@ -600,9 +600,25 @@ let searchT; document.getElementById('q').oninput=e=>{clearTimeout(searchT);sear
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=`<span class="tick">✓</span>${esc(msg)}`; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
+
+/* ============ Auto-refresh (open board picks up new GHL leads on its own) ============ */
+let lastSyncedAt=null;
+async function autoRefresh(){
+  if(!API) return;                                                 // preview mode = static data
+  if(document.getElementById('drawer').classList.contains('show')) return;   // don't disrupt an open lead
+  if(addModal.classList.contains('show')) return;
+  try{
+    const r=await fetch(API.url+'&format=json'); const j=await r.json();
+    const fresh=applyOverlay(j.leads||[]);
+    const changed = fresh.length!==LEADS.length || j.syncedAt!==lastSyncedAt;
+    lastSyncedAt=j.syncedAt; LEADS=fresh; setSynced(j.syncedAt);
+    if(changed){ const n=fresh.length-0; render(); }
+  }catch(e){}
+}
+
 // location label in the title bar (SHINE · Victoria / Prince George)
 (function(){ const loc=window.__LEADS_LOCATION||'Leads'; const el=document.querySelector('.brand-sub'); if(el) el.textContent=loc; document.title='Shine Leads — '+loc; })();
-(async function(){ await loadLeads(); render(); })();
+(async function(){ await loadLeads(); lastSyncedAt=(window.SHINE_SYNCED_AT||null); render(); if(API) setInterval(autoRefresh, 60000); })();
 </script>
 </body>
 </html>
