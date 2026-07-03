@@ -244,14 +244,15 @@ td .nm{font-weight:700;color:var(--ink)}
 (function(){
   var p = new URLSearchParams(location.search);
   var key = p.get('key') || '';
+  window.__LEADS_LOCATION = 'Victoria';
   if(!key){
     document.documentElement.innerHTML =
       '<div style="font-family:system-ui;max-width:360px;margin:16vh auto;background:#fff;padding:30px;border-radius:16px;box-shadow:0 10px 40px rgba(1,53,93,.18);text-align:center">'
-      +'<div style="font-weight:800;font-size:22px;color:#01355d">SHINE<span style="color:#22d8d2">.</span> Leads</div>'
+      +'<div style="font-weight:800;font-size:22px;color:#01355d">SHINE<span style="color:#22d8d2">.</span> Victoria</div>'
       +'<p style="color:#6b7683">Add <code>?key=YOUR_PASSCODE</code> to the URL to view leads.</p></div>';
     throw 'no key';
   }
-  window.__LEADS_API = { url: 'https://fxutwkandrlmtdjvydal.functions.supabase.co/leads-board' + '?key=' + encodeURIComponent(key) };
+  window.__LEADS_API = { url: 'https://fxutwkandrlmtdjvydal.functions.supabase.co/leads-board' + '?key=' + encodeURIComponent(key) + '&loc=victoria' };
 })();
 </script>
 <script>
@@ -330,8 +331,11 @@ let sortKey='name', sortDir=1, selected=null;
 function fmtPhone(p){ if(!p) return ''; let d=(''+p).replace(/[^0-9]/g,''); if(d.length===11&&d[0]==='1') d=d.slice(1); if(d.length===10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; return p; }
 function telHref(p){ return (''+(p||'')).replace(/[^0-9+]/g,''); }
 function parseD(s){ if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; }
-function fmtDate(s){ const d=parseD(s); if(!d) return ''; const y=new Date().getFullYear(); const o={timeZone:TZ,month:'short',day:'numeric'}; if(d.getFullYear()!==y)o.year='2-digit'; return d.toLocaleDateString('en-CA',o); }
-function fmtDateTime(s){ const d=parseD(s); if(!d) return ''; return d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function isDateOnly(s){ return typeof s==='string' && /^\d{4}-\d{2}-\d{2}$/.test(s); }  // sheet call w/ no time
+function fmtDate(s){ if(!s) return '';
+  if(isDateOnly(s)){ const p=s.split('-').map(Number); const d=new Date(Date.UTC(p[0],p[1]-1,p[2])); const o={timeZone:'UTC',month:'short',day:'numeric'}; if(p[0]!==new Date().getFullYear())o.year='2-digit'; return d.toLocaleDateString('en-CA',o); }
+  const d=parseD(s); if(!d) return ''; const o={timeZone:TZ,month:'short',day:'numeric'}; if(d.getFullYear()!==new Date().getFullYear())o.year='2-digit'; return d.toLocaleDateString('en-CA',o); }
+function fmtDateTime(s){ if(!s) return ''; if(isDateOnly(s)) return fmtDate(s)+' (date only)'; const d=parseD(s); if(!d) return ''; return d.toLocaleString('en-CA',{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
 function relDays(s){ const d=parseD(s); if(!d) return null; return Math.floor((Date.now()-d)/86400000); }
 function esc(s){ return (''+(s??'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function lastContact(l){ if(l.last_contact) return l.last_contact; if(l.calls&&l.calls.length) return l.calls.slice().sort().at(-1); return null; }
@@ -551,6 +555,8 @@ let searchT; document.getElementById('q').oninput=e=>{clearTimeout(searchT);sear
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=`<span class="tick">✓</span>${esc(msg)}`; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
+// location label in the title bar (SHINE · Victoria / Prince George)
+(function(){ const loc=window.__LEADS_LOCATION||'Leads'; const el=document.querySelector('.brand-sub'); if(el) el.textContent=loc; document.title='Shine Leads — '+loc; })();
 (async function(){ await loadLeads(); render(); })();
 </script>
 </body>
