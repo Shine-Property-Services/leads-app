@@ -310,8 +310,8 @@ try{ overlay=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay=
 function persistOverlay(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(overlay)); }catch(e){} }
 function applyOverlay(base){ return base.map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
 async function loadLeads(){
-  if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); }
-  else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); }
+  if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); lastSyncedAt=j.syncedAt; }
+  else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); lastSyncedAt=window.SHINE_SYNCED_AT||null; }
 }
 async function saveLead(id,patch){
   const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);
@@ -328,7 +328,7 @@ async function createLead(rec){
 /* ============ State ============ */
 let view='board', search='';
 let activeCols=new Set(COLUMNS.filter(c=>!c.off).map(c=>c.key));
-let sortKey='name', sortDir=1, selected=null;
+let sortKey='name', sortDir=1, selected=null, lastSyncedAt=null;
 
 /* ============ Helpers (times in Victoria/Pacific) ============ */
 function fmtPhone(p){ if(!p) return ''; let d=(''+p).replace(/[^0-9]/g,''); if(d.length===11&&d[0]==='1') d=d.slice(1); if(d.length===10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; return p; }
@@ -601,24 +601,22 @@ let toastT; function toast(msg){ const t=document.getElementById('toast'); t.inn
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
 
-/* ============ Auto-refresh (open board picks up new GHL leads on its own) ============ */
-let lastSyncedAt=null;
+/* ============ Auto-refresh: fast lightweight check every 10s; full fetch only when something changed ============ */
 async function autoRefresh(){
   if(!API) return;                                                 // preview mode = static data
   if(document.getElementById('drawer').classList.contains('show')) return;   // don't disrupt an open lead
   if(addModal.classList.contains('show')) return;
   try{
+    const s=await (await fetch(API.url+'&format=status')).json();  // tiny: just the sync timestamp
+    if(s.syncedAt===lastSyncedAt) return;                          // nothing changed → cheap exit
     const r=await fetch(API.url+'&format=json'); const j=await r.json();
-    const fresh=applyOverlay(j.leads||[]);
-    const changed = fresh.length!==LEADS.length || j.syncedAt!==lastSyncedAt;
-    lastSyncedAt=j.syncedAt; LEADS=fresh; setSynced(j.syncedAt);
-    if(changed){ const n=fresh.length-0; render(); }
+    lastSyncedAt=j.syncedAt; LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); render();
   }catch(e){}
 }
 
 // location label in the title bar (SHINE · Victoria / Prince George)
 (function(){ const loc=window.__LEADS_LOCATION||'Leads'; const el=document.querySelector('.brand-sub'); if(el) el.textContent=loc; document.title='Shine Leads — '+loc; })();
-(async function(){ await loadLeads(); lastSyncedAt=(window.SHINE_SYNCED_AT||null); render(); if(API) setInterval(autoRefresh, 60000); })();
+(async function(){ await loadLeads(); render(); if(API) setInterval(autoRefresh, 10000); })();
 </script>
 </body>
 </html>
