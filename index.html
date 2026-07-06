@@ -311,15 +311,15 @@ const DEMOTE_COLS=new Set(['followup','quotes_sent','lost']);
 
 // manual status vocabulary (from the Google-Sheet dropdowns)
 const SHEET_STATUSES=['New Lead','For Follow-up','For In-person','For Phone Quote','Drive-By Quote','Advised to send photos','Quote Sent','For Quote Follow-up','Undecided','Job Booked','Completed','Archived Quote','For Next Year','For later this year','No Contact Info','Not Serviceable','Declined','Tagged as Lost'];
-const REPO_STATUSES=new Set(['Declined','No Contact Info','Not Serviceable']);
+const REPO_STATUSES=new Set(['Undecided','Declined','No Contact Info','Not Serviceable']);
 const WON_STATUSES=new Set(['Won','Job Booked','Completed']);
 const STATUS_TO_COL={
   'New Lead':'new','For Follow-up':'followup',
   'For In-person':'quoting','For Phone Quote':'quoting','Drive-By Quote':'quoting','Advised to send photos':'quoting',
-  'Quote Sent':'quotes_sent','For Quote Follow-up':'quotes_sent','Undecided':'quotes_sent',
+  'Quote Sent':'quotes_sent','For Quote Follow-up':'quotes_sent',
   'Tagged as Lost':'lost','For Next Year':'later','For later this year':'later',
   'Won':'other','Job Booked':'other','Completed':'other','Archived Quote':'other',
-  'Declined':'repository','No Contact Info':'repository','Not Serviceable':'repository',
+  'Undecided':'repository','Declined':'repository','No Contact Info':'repository','Not Serviceable':'repository',
 };
 const COL_STATUS={new:'New Lead',followup:'For Follow-up',quoting:'For In-person',quotes_sent:'Quote Sent',lost:'Tagged as Lost'};
 
