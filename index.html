@@ -340,15 +340,31 @@ const LS_KEY='shine_leads_overlay_v3';
 let LEADS=[], overlay={};
 try{ overlay=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
 function persistOverlay(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(overlay)); }catch(e){} }
-function applyOverlay(base){ return base.filter(l=>!(overlay[l.id]&&overlay[l.id].hidden)).map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
+// In LIVE (API) mode the server is the single source of truth — never let a local overlay mask
+// another user's changes. The overlay is only for offline preview mode (no backend).
+function applyOverlay(base){ if(API) return base.map(l=>({...l})); return base.filter(l=>!(overlay[l.id]&&overlay[l.id].hidden)).map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
 async function loadLeads(){
   if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); lastSyncedAt=j.syncedAt; }
   else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); lastSyncedAt=window.SHINE_SYNCED_AT||null; }
 }
 async function saveLead(id,patch){
-  const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);
-  overlay[id]={...(overlay[id]||{}),...patch}; persistOverlay();
-  if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch})}); }catch(e){ toast('Saved locally — sync failed'); } }
+  const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);   // optimistic
+  if(!API){ overlay[id]={...(overlay[id]||{}),...patch}; persistOverlay(); return; }
+  const body={id,patch:{...patch}};
+  if('calls' in patch) body.patch.base_calls=(l&&l._baseCalls)?l._baseCalls:((l&&l.calls)||[]);  // 3-way merge on the server
+  try{
+    const r=await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const res=await r.json().catch(()=>null);
+    if(res&&res.calls&&l){                                           // adopt the server-merged call log (keeps other users' calls)
+      l.calls=res.calls; l.times_called=res.times_called; l.last_contact=res.last_contact; l._baseCalls=res.calls.slice();
+      if(selected&&selected.id===id&&editingCall<0){
+        document.getElementById('drCalls').textContent=l.times_called||0;
+        document.getElementById('drLast').textContent=l.last_contact?('Last: '+fmtDateTime(l.last_contact)):'No contact logged';
+        renderTimeline(l);
+      }
+      render();
+    }
+  }catch(e){ toast('Sync failed — check connection'); }
 }
 async function deleteLead(id){   // soft-delete: hide in the app (sync respects it); GHL record is untouched
   overlay[id]={...(overlay[id]||{}),hidden:true}; persistOverlay();
@@ -524,6 +540,7 @@ function toggleLater(id){
 /* ============ Drawer ============ */
 function openDrawer(id){
   const l=LEADS.find(x=>x.id===id); if(!l)return; selected=l; editingCall=-1;
+  l._baseCalls=(l.calls||[]).slice();   // snapshot the call log as loaded → server 3-way-merges against this on save
   document.getElementById('drName').textContent=l.name||'(no name)';
   const pill=document.getElementById('drStatusPill'); pill.textContent=COL[colOf(l)].label; pill.style.background=colorOf(l); pill.style.color='#fff';
   const contact=document.getElementById('drContact'); contact.innerHTML='';
@@ -656,14 +673,27 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addM
 /* ============ Auto-refresh: fast lightweight check every 10s; full fetch only when something changed ============ */
 async function autoRefresh(){
   if(!API) return;                                                 // preview mode = static data
-  if(document.getElementById('drawer').classList.contains('show')) return;   // don't disrupt an open lead
   if(addModal.classList.contains('show')) return;
   try{
     const s=await (await fetch(API.url+'&format=status')).json();  // tiny: just the sync timestamp
     if(s.syncedAt===lastSyncedAt) return;                          // nothing changed → cheap exit
     const r=await fetch(API.url+'&format=json'); const j=await r.json();
-    lastSyncedAt=j.syncedAt; LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); render();
+    lastSyncedAt=j.syncedAt; LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt);
+    if(document.getElementById('drawer').classList.contains('show') && selected){
+      const fresh=LEADS.find(x=>x.id===selected.id);              // keep the open lead in sync with other users
+      if(fresh){ fresh._baseCalls=(fresh.calls||[]).slice(); selected=fresh; refreshDrawerLive(fresh); }
+    }
+    render();
   }catch(e){}
+}
+// refresh the read-only parts of an open drawer from fresh data, WITHOUT stomping fields the user is editing
+function refreshDrawerLive(l){
+  document.getElementById('drCalls').textContent=l.times_called||0;
+  const lc=lastContact(l); document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
+  const pill=document.getElementById('drStatusPill'); pill.textContent=COL[colOf(l)].label; pill.style.background=colorOf(l); pill.style.color='#fff';
+  const stg=document.getElementById('drStage'); stg.textContent=l.ghl_stage||'—';
+  document.getElementById('drStatusText').textContent=l.ghl_status?('· '+l.ghl_status):'';
+  if(editingCall<0) renderTimeline(l);        // don't interrupt an in-progress call edit
 }
 
 // location label in the title bar (SHINE · Victoria / Prince George)
