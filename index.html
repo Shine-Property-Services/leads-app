@@ -102,6 +102,19 @@ tr.row{cursor:pointer}
 tr.row:hover td{background:#f2fbfb}
 td .nm{font-weight:700;color:var(--ink)}
 .count-note{font-size:12.5px;color:var(--muted);margin:2px 0 12px;font-weight:500}
+.metrics{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap;margin:0 0 14px}
+.mstat{background:linear-gradient(180deg,#fff, #fbfdfe);border:1px solid var(--line);border-radius:12px;padding:11px 18px;min-width:150px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.mstat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal)}
+.mstat.book::before{background:var(--blue)}
+.mlabel{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.mval{font-size:27px;font-weight:800;color:var(--navy);line-height:1.15}
+.msub{font-size:12px;color:var(--muted)}
+.mrange{display:flex;align-items:flex-end;gap:10px;margin-left:auto;flex-wrap:wrap}
+.mrange label{font-size:11px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.mrange input{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;color:var(--ink);background:#fff}
+.mrange .btn-sm{align-self:flex-end}
+.mnote{flex-basis:100%;font-size:11px;color:var(--faint);margin-top:-4px}
+@media(max-width:640px){ .metrics{gap:10px} .mstat{flex:1;min-width:120px;padding:9px 12px} .mval{font-size:22px} .mrange{margin-left:0;flex-basis:100%} .mrange label{flex:1} .mrange input{width:100%} }
 
 .scrim{position:fixed;inset:0;background:rgba(1,25,45,.45);z-index:50;opacity:0;pointer-events:none;transition:.2s}
 .scrim.show{opacity:1;pointer-events:auto}
@@ -214,6 +227,24 @@ td .nm{font-weight:700;color:var(--ink)}
 </div>
 
 <main>
+  <div class="metrics" id="metricsBar">
+    <div class="mstat book">
+      <div class="mlabel">Booking rate</div>
+      <div class="mval" id="mBooking">—</div>
+      <div class="msub" id="mBookingSub">for quoting ÷ leads in</div>
+    </div>
+    <div class="mstat">
+      <div class="mlabel">Conversion rate</div>
+      <div class="mval" id="mConversion">—</div>
+      <div class="msub" id="mConversionSub">jobs booked ÷ quotes sent</div>
+    </div>
+    <div class="mrange">
+      <label>From<input type="date" id="mFrom"></label>
+      <label>To<input type="date" id="mTo"></label>
+      <button class="btn btn-out btn-sm" id="mThisMonth">This month</button>
+    </div>
+    <div class="mnote" id="mNote"></div>
+  </div>
   <div class="count-note" id="countNote"></div>
   <div id="boardView" class="board"></div>
   <div id="tableView" class="hidden"></div>
@@ -369,7 +400,7 @@ async function saveLead(id,patch){
 async function deleteLead(id){   // soft-delete: hide in the app (sync respects it); GHL record is untouched
   overlay[id]={...(overlay[id]||{}),hidden:true}; persistOverlay();
   LEADS=LEADS.filter(x=>x.id!==id);
-  if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch:{hidden:true}})}); }catch(e){ toast('Removed locally — sync failed'); } }
+  if(API){ try{ await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,patch:{hidden:true,hidden_reason:'deleted'}})}); }catch(e){ toast('Removed locally — sync failed'); } }
 }
 async function createLead(rec){
   rec.id='new-'+Date.now(); rec.origin='manual'; rec.calls=[]; rec.times_called=0;
@@ -683,7 +714,7 @@ async function autoRefresh(){
       const fresh=LEADS.find(x=>x.id===selected.id);              // keep the open lead in sync with other users
       if(fresh){ fresh._baseCalls=(fresh.calls||[]).slice(); selected=fresh; refreshDrawerLive(fresh); }
     }
-    render();
+    render(); loadMetrics();
   }catch(e){}
 }
 // refresh the read-only parts of an open drawer from fresh data, WITHOUT stomping fields the user is editing
@@ -696,9 +727,39 @@ function refreshDrawerLive(l){
   if(editingCall<0) renderTimeline(l);        // don't interrupt an in-progress call edit
 }
 
+/* ============ Metrics bar (booking rate + conversion rate) ============ */
+let METRICS=[];
+const COL_RANK={new:0,followup:1,quoting:2,quotes_sent:3,other:4,later:1,lost:-1,repository:-1};
+function pacificToday(){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
+function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; const d=parseD(iso); if(!d) return null; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
+function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
+async function loadMetrics(){
+  if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
+  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ intake:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other' })); }
+  renderMetrics();
+}
+function renderMetrics(){
+  const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
+  let leadsIn=0,quoting=0,quoteSent=0,jobs=0;
+  for(const m of METRICS){ const d=pacificYmd(m.intake); if(!d) continue; if(from&&d<from) continue; if(to&&d>to) continue;
+    leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; }
+  const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
+  document.getElementById('mBooking').textContent=pct(quoting,leadsIn);
+  document.getElementById('mBookingSub').textContent=`${quoting} for quoting ÷ ${leadsIn} leads in`;
+  document.getElementById('mConversion').textContent=pct(jobs,quoteSent);
+  document.getElementById('mConversionSub').textContent=`${jobs} jobs booked ÷ ${quoteSent} quotes sent`;
+}
+(function initMetrics(){
+  setThisMonth();
+  document.getElementById('mFrom').onchange=renderMetrics;
+  document.getElementById('mTo').onchange=renderMetrics;
+  document.getElementById('mThisMonth').onclick=()=>{ setThisMonth(); renderMetrics(); };
+  document.getElementById('mNote').textContent='Counts every lead that ever reached each step (lost leads included), by the date it came into GHL. Accuracy improves as stage history builds up over time.';
+})();
+
 // location label in the title bar (SHINE · Victoria / Prince George)
 (function(){ const loc=window.__LEADS_LOCATION||'Leads'; const el=document.querySelector('.brand-sub'); if(el) el.textContent=loc; document.title='Shine Leads — '+loc; })();
-(async function(){ await loadLeads(); render(); if(API) setInterval(autoRefresh, 10000); })();
+(async function(){ await loadLeads(); render(); await loadMetrics(); if(API) setInterval(autoRefresh, 10000); })();
 </script>
 </body>
 </html>
