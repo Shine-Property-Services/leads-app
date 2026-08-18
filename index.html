@@ -741,13 +741,15 @@ function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; 
 function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
-  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ intake:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other' })); }
+  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(colOf(l)==='lost'||colOf(l)==='repository') })); }
   renderMetrics();
 }
+// a lead counts in the range if EITHER its contact-created date (c) or its latest request date (r) falls in it
+function inMetricRange(d,from,to){ const y=pacificYmd(d); if(!y) return false; if(from&&y<from) return false; if(to&&y>to) return false; return true; }
 function renderMetrics(){
   const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
   let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0;
-  for(const m of METRICS){ const d=pacificYmd(m.intake); if(!d) continue; if(from&&d<from) continue; if(to&&d>to) continue;
+  for(const m of METRICS){ if(!(inMetricRange(m.c,from,to)||inMetricRange(m.r,from,to))) continue;
     leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++; }
   const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
   document.getElementById('mBooking').textContent=pct(quoting,leadsIn);
