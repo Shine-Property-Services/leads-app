@@ -106,6 +106,7 @@ td .nm{font-weight:700;color:var(--ink)}
 .mstat{background:linear-gradient(180deg,#fff, #fbfdfe);border:1px solid var(--line);border-radius:12px;padding:11px 18px;min-width:150px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .mstat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal)}
 .mstat.book::before{background:var(--blue)}
+.mstat.lost::before{background:var(--red)}
 .mlabel{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .mval{font-size:27px;font-weight:800;color:var(--navy);line-height:1.15}
 .msub{font-size:12px;color:var(--muted)}
@@ -237,6 +238,11 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="mlabel">Conversion rate</div>
       <div class="mval" id="mConversion">—</div>
       <div class="msub" id="mConversionSub">jobs booked ÷ quotes sent</div>
+    </div>
+    <div class="mstat lost">
+      <div class="mlabel">Lost/abandon rate</div>
+      <div class="mval" id="mLost">—</div>
+      <div class="msub" id="mLostSub">lost or abandoned ÷ leads in</div>
     </div>
     <div class="mrange">
       <label>From<input type="date" id="mFrom"></label>
@@ -740,14 +746,16 @@ async function loadMetrics(){
 }
 function renderMetrics(){
   const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
-  let leadsIn=0,quoting=0,quoteSent=0,jobs=0;
+  let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0;
   for(const m of METRICS){ const d=pacificYmd(m.intake); if(!d) continue; if(from&&d<from) continue; if(to&&d>to) continue;
-    leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; }
+    leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++; }
   const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
   document.getElementById('mBooking').textContent=pct(quoting,leadsIn);
   document.getElementById('mBookingSub').textContent=`${quoting} for quoting ÷ ${leadsIn} leads in`;
   document.getElementById('mConversion').textContent=pct(jobs,quoteSent);
   document.getElementById('mConversionSub').textContent=`${jobs} jobs booked ÷ ${quoteSent} quotes sent`;
+  document.getElementById('mLost').textContent=pct(lost,leadsIn);
+  document.getElementById('mLostSub').textContent=`${lost} lost/abandoned ÷ ${leadsIn} leads in`;
 }
 (function initMetrics(){
   setThisMonth();
