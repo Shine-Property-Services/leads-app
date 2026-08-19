@@ -107,6 +107,7 @@ td .nm{font-weight:700;color:var(--ink)}
 .mstat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal)}
 .mstat.book::before{background:var(--blue)}
 .mstat.lost::before{background:var(--red)}
+.mstat.stl::before{background:var(--amber)}
 .mlabel{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .mval{font-size:27px;font-weight:800;color:var(--navy);line-height:1.15}
 .msub{font-size:12px;color:var(--muted)}
@@ -244,6 +245,11 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="mval" id="mLost">—</div>
       <div class="msub" id="mLostSub">lost leads ÷ leads in</div>
     </div>
+    <div class="mstat stl">
+      <div class="mlabel">Avg speed to lead</div>
+      <div class="mval" id="mSTL">—</div>
+      <div class="msub" id="mSTLSub">first call after lead came in</div>
+    </div>
     <div class="mrange">
       <label>From<input type="date" id="mFrom"></label>
       <label>To<input type="date" id="mTo"></label>
@@ -282,6 +288,7 @@ td .nm{font-weight:700;color:var(--ink)}
       <button class="btn btn-amber btn-sm" id="drLaterBtn" style="margin-top:10px">☆ Mark "For later"</button>
     </div>
     <div class="fld"><label>Added as new lead (GHL)</label><div id="drAdded" style="font-size:13px;color:var(--text)"></div></div>
+    <div class="fld"><label>Speed to lead</label><div id="drSTL" style="font-size:13px;color:var(--text)"></div></div>
     <div class="fld"><label>Next follow-up</label><input type="date" id="drFollow"/></div>
     <div class="fld"><label>Notes</label><textarea id="drNotes" placeholder="Add a note…"></textarea></div>
     <div class="fld" id="drSrcWrap"><label>Source</label><div id="drSrc" style="font-size:13px;color:var(--muted)"></div></div>
@@ -397,7 +404,7 @@ async function saveLead(id,patch){
       if(selected&&selected.id===id&&editingCall<0){
         document.getElementById('drCalls').textContent=l.times_called||0;
         document.getElementById('drLast').textContent=l.last_contact?('Last: '+fmtDateTime(l.last_contact)):'No contact logged';
-        renderTimeline(l);
+        drawSpeedToLead(l); renderTimeline(l);
       }
       render();
     }
@@ -598,6 +605,7 @@ function openDrawer(id){
   else if(l.created_at){ addedHtml='🟢 '+esc(fmtDateTime(l.created_at)); }
   else addedHtml='<span style="color:var(--faint)">—</span>';
   document.getElementById('drAdded').innerHTML=addedHtml;
+  drawSpeedToLead(l);
   document.getElementById('drFollow').value=l.next_follow_up?(l.next_follow_up.slice(0,10)):'';
   document.getElementById('drNotes').value=l.notes||'';
   const srcWrap=document.getElementById('drSrcWrap');
@@ -606,6 +614,8 @@ function openDrawer(id){
   document.getElementById('drawer').classList.add('show'); document.getElementById('scrim').classList.add('show');
 }
 function refreshLaterBtn(){ const b=document.getElementById('drLaterBtn'); if(!selected)return; const on=selected.manual_bucket==='later'; b.textContent=on?'★ Remove from "For later"':'☆ Mark "For later"'; b.onclick=()=>toggleLater(selected.id); }
+function drawSpeedToLead(l){ const el=document.getElementById('drSTL'); if(!el)return; const mins=speedToLeadMins(l);
+  el.innerHTML = (mins!=null) ? `⚡ <b>${fmtDur(mins)}</b> <span style="color:var(--muted)">from lead in → first call</span>` : '<span style="color:var(--faint)">No call logged yet</span>'; }
 let editingCall=-1;
 function renderTimeline(l){
   const tl=document.getElementById('drTimeline');
@@ -630,7 +640,7 @@ function renderTimeline(l){
     saveLead(l.id,{calls,times_called:calls.length,last_contact:lc}); editingCall=-1;
     document.getElementById('drCalls').textContent=l.times_called;
     document.getElementById('drLast').textContent=lc?('Last: '+fmtDateTime(lc)):'No contact logged';
-    renderTimeline(l); render(); toast('Call removed');
+    drawSpeedToLead(l); renderTimeline(l); render(); toast('Call removed');
   });
   tl.querySelectorAll('[data-savecall]').forEach(b=>b.onclick=()=>{
     const dt=document.getElementById('ecDt').value; if(!dt){ toast('Pick a date & time'); return; }
@@ -639,7 +649,7 @@ function renderTimeline(l){
     const lc=calls.map(callTs).sort().at(-1);
     saveLead(l.id,{calls,last_contact:lc}); editingCall=-1;
     document.getElementById('drLast').textContent='Last: '+fmtDateTime(lc);
-    renderTimeline(l); render(); toast('Call updated');
+    drawSpeedToLead(l); renderTimeline(l); render(); toast('Call updated');
   });
 }
 function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('scrim').classList.remove('show'); selected=null; }
@@ -650,7 +660,7 @@ document.getElementById('logCallBtn').onclick=()=>{
   saveLead(selected.id,{calls,times_called:(selected.times_called||0)+1,last_contact:now});
   document.getElementById('drCalls').textContent=selected.times_called;
   document.getElementById('drLast').textContent='Last: '+fmtDateTime(now);
-  renderTimeline(selected); toast('Call logged'); render();
+  drawSpeedToLead(selected); renderTimeline(selected); toast('Call logged'); render();
 };
 document.getElementById('drSave').onclick=()=>{
   if(!selected)return;
@@ -730,27 +740,33 @@ function refreshDrawerLive(l){
   const pill=document.getElementById('drStatusPill'); pill.textContent=COL[colOf(l)].label; pill.style.background=colorOf(l); pill.style.color='#fff';
   const stg=document.getElementById('drStage'); stg.textContent=l.ghl_stage||'—';
   document.getElementById('drStatusText').textContent=l.ghl_status?('· '+l.ghl_status):'';
+  drawSpeedToLead(l);
   if(editingCall<0) renderTimeline(l);        // don't interrupt an in-progress call edit
 }
 
 /* ============ Metrics bar (booking rate + conversion rate) ============ */
 let METRICS=[];
 const COL_RANK={new:0,followup:1,quoting:2,quotes_sent:3,other:4,later:1,lost:-1,repository:-1};
+// speed to lead = first call logged − when the lead came in
+function firstAddedTs(l){ const h=Array.isArray(l.new_lead_history)?l.new_lead_history.slice().sort():[]; return h.length?h[0]:(l.created_at||null); }
+function speedToLeadMins(l){ const added=firstAddedTs(l); if(!added) return null; const cs=(l.calls||[]).map(callTs).filter(Boolean).map(t=>new Date(t).getTime()).filter(t=>!isNaN(t)); if(!cs.length) return null; const first=Math.min(...cs), ai=new Date(added).getTime(); if(isNaN(ai)||first<ai) return null; return Math.round((first-ai)/60000); }
+function fmtDur(mins){ if(mins==null||isNaN(mins)) return '—'; mins=Math.round(mins); if(mins<1) return '<1m'; if(mins<60) return mins+'m'; const h=Math.floor(mins/60),m=mins%60; if(h<24) return m?`${h}h ${m}m`:`${h}h`; const d=Math.floor(h/24),hh=h%24; return hh?`${d}d ${hh}h`:`${d}d`; }
 function pacificToday(){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; const d=parseD(iso); if(!d) return null; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
-  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open') })); }
+  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l) })); }
   renderMetrics();
 }
 // a lead counts in the range if EITHER its contact-created date (c) or its latest request date (r) falls in it
 function inMetricRange(d,from,to){ const y=pacificYmd(d); if(!y) return false; if(from&&y<from) return false; if(to&&y>to) return false; return true; }
 function renderMetrics(){
   const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
-  let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0;
+  let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0,stlSum=0,stlN=0;
   for(const m of METRICS){ if(!(inMetricRange(m.c,from,to)||inMetricRange(m.r,from,to))) continue;
-    leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++; }
+    leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++;
+    if(m.stl!=null){ stlSum+=m.stl; stlN++; } }
   const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
   document.getElementById('mBooking').textContent=pct(quoting,leadsIn);
   document.getElementById('mBookingSub').textContent=`${quoting} for quoting ÷ ${leadsIn} leads in`;
@@ -758,6 +774,8 @@ function renderMetrics(){
   document.getElementById('mConversionSub').textContent=`${jobs} jobs booked ÷ ${quoteSent} quotes sent`;
   document.getElementById('mLost').textContent=pct(lost,leadsIn);
   document.getElementById('mLostSub').textContent=`${lost} lost leads ÷ ${leadsIn} leads in`;
+  document.getElementById('mSTL').textContent=stlN?fmtDur(stlSum/stlN):'—';
+  document.getElementById('mSTLSub').textContent=stlN?`avg across ${stlN} contacted lead${stlN===1?'':'s'}`:'no calls logged yet';
 }
 (function initMetrics(){
   setThisMonth();
