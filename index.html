@@ -130,6 +130,8 @@ td .nm{font-weight:700;color:var(--ink)}
 .alert-card{ background:#fff; border-left:5px solid var(--red); border-radius:12px; box-shadow:var(--shadow-lg); padding:12px 14px; animation:alertin .25s ease; }
 @keyframes alertin{ from{transform:translateX(24px);opacity:0} to{transform:none;opacity:1} }
 .alert-card h4{ font-size:12px; font-weight:800; color:var(--red); display:flex; align-items:center; gap:6px; text-transform:uppercase; letter-spacing:.03em; }
+.alert-card.new{ border-left-color:var(--teal); }
+.alert-card.new h4{ color:var(--teal-ink); }
 .alert-card .an{ font-weight:800; color:var(--navy); font-size:16px; margin-top:3px; }
 .alert-card .am{ font-size:12px; color:var(--muted); margin:2px 0 9px; }
 .alert-card .arow{ display:flex; gap:8px; }
@@ -781,6 +783,27 @@ function showLeadAlert(l){
   c.querySelector('[data-dismiss]').onclick=()=>{ dismissed.add(l.id); c.remove(); };
   box.appendChild(c);
 }
+// initial alert: fire the moment a brand-new lead lands in New Leads (separate from the 10-min nudge)
+let knownIds=null;
+function showNewLeadArrival(l){
+  try{ if('Notification' in window && Notification.permission==='granted'){
+    const n=new Notification('🆕 New lead just came in', { body:(l.name||'New lead')+(l.source?(' · '+l.source):''), tag:'new-'+l.id });
+    n.onclick=()=>{ try{window.focus();}catch(e){} openDrawer(l.id); n.close(); };
+  } }catch(e){}
+  const box=document.getElementById('alerts'); if(!box || box.querySelector(`[data-newid="${l.id}"]`)) return;
+  const c=document.createElement('div'); c.className='alert-card new'; c.dataset.newid=l.id;
+  c.innerHTML=`<h4>🆕 New lead just came in</h4><div class="an">${esc(l.name||'(no name)')}</div><div class="am">${l.phone?esc(fmtPhone(l.phone))+' · ':''}${esc(l.source||'New Lead')}</div><div class="arow"><button class="btn btn-primary btn-sm" data-open>Open lead</button><button class="btn btn-out btn-sm" data-dismiss>Dismiss</button></div>`;
+  c.querySelector('[data-open]').onclick=()=>{ openDrawer(l.id); c.remove(); };
+  c.querySelector('[data-dismiss]').onclick=()=>{ c.remove(); };
+  box.appendChild(c);
+  setTimeout(()=>{ c.remove(); }, 45000);   // heads-up banner auto-clears (the 10-min nudge is the sticky one)
+}
+function checkNewArrivals(){
+  if(knownIds===null){ knownIds=new Set(LEADS.map(l=>l.id)); return; }   // seed silently on first load — no backlog replay
+  for(const l of LEADS){ if(knownIds.has(l.id)) continue;
+    if(colOf(l)==='new' && l.origin!=='manual' && inAlertHours()) showNewLeadArrival(l);   // brand-new GHL lead in New Leads
+    knownIds.add(l.id); }
+}
 function checkOverdueNew(){
   const overdue=new Set(LEADS.filter(isOverdueNew).map(l=>l.id));
   document.querySelectorAll('.card[data-id]').forEach(el=>el.classList.toggle('overdue', overdue.has(el.dataset.id)));
@@ -802,6 +825,7 @@ async function autoRefresh(){
     if(s.syncedAt===lastSyncedAt) return;                          // nothing changed → cheap exit
     const r=await fetch(API.url+'&format=json'); const j=await r.json();
     lastSyncedAt=j.syncedAt; LEADS=applyOverlay(j.leads||[]); EXCEPTIONS=j.exceptions||EXCEPTIONS; setSynced(j.syncedAt);
+    checkNewArrivals();   // fire an alert for any brand-new lead that just landed
     if(document.getElementById('drawer').classList.contains('show') && selected){
       const fresh=LEADS.find(x=>x.id===selected.id);              // keep the open lead in sync with other users
       if(fresh){ fresh._baseCalls=(fresh.calls||[]).slice(); selected=fresh; refreshDrawerLive(fresh); }
@@ -934,7 +958,7 @@ if(document.getElementById('notifBtn')){
   updateNotifBtn();
 }
 setInterval(checkOverdueNew, 20000);   // re-evaluate the 10-min SLA even when no data changes
-(async function(){ await loadLeads(); render(); await loadMetrics(); if(API) setInterval(autoRefresh, 10000); })();
+(async function(){ await loadLeads(); checkNewArrivals(); render(); await loadMetrics(); if(API) setInterval(autoRefresh, 10000); })();
 </script>
 </body>
 </html>
