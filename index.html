@@ -242,7 +242,7 @@ td .nm{font-weight:700;color:var(--ink)}
     <div class="mstat lost">
       <div class="mlabel">Lost/abandon rate</div>
       <div class="mval" id="mLost">—</div>
-      <div class="msub" id="mLostSub">lost or abandoned ÷ leads in</div>
+      <div class="msub" id="mLostSub">lost leads ÷ leads in</div>
     </div>
     <div class="mrange">
       <label>From<input type="date" id="mFrom"></label>
@@ -741,7 +741,7 @@ function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; 
 function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
-  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(colOf(l)==='lost'||colOf(l)==='repository') })); }
+  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open') })); }
   renderMetrics();
 }
 // a lead counts in the range if EITHER its contact-created date (c) or its latest request date (r) falls in it
@@ -757,7 +757,7 @@ function renderMetrics(){
   document.getElementById('mConversion').textContent=pct(jobs,quoteSent);
   document.getElementById('mConversionSub').textContent=`${jobs} jobs booked ÷ ${quoteSent} quotes sent`;
   document.getElementById('mLost').textContent=pct(lost,leadsIn);
-  document.getElementById('mLostSub').textContent=`${lost} lost/abandoned ÷ ${leadsIn} leads in`;
+  document.getElementById('mLostSub').textContent=`${lost} lost leads ÷ ${leadsIn} leads in`;
 }
 (function initMetrics(){
   setThisMonth();
