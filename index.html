@@ -267,6 +267,7 @@ td .nm{font-weight:700;color:var(--ink)}
       <label>From<input type="date" id="mFrom"></label>
       <label>To<input type="date" id="mTo"></label>
       <button class="btn btn-out btn-sm" id="mThisMonth">This month</button>
+      <button class="btn btn-out btn-sm" id="excBtn" title="Meeting/blackout windows excluded from speed to lead">⏸ Exceptions</button>
     </div>
     <div class="mnote" id="mNote"></div>
   </div>
@@ -326,6 +327,24 @@ td .nm{font-weight:700;color:var(--ink)}
       <button class="btn btn-out" id="aCancel">Cancel</button>
       <button class="btn btn-primary" id="aCreate">Create lead</button>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="excModal">
+  <div class="box">
+    <h2>Speed-to-lead exceptions</h2>
+    <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 12px">Meeting / blackout windows in Victoria (Pacific) time. Any time a lead spends waiting inside these windows won't count against speed to lead.</p>
+    <div class="mbody">
+      <div class="fld"><label>Date</label><input type="date" id="exDate"/></div>
+      <div style="display:flex;gap:10px">
+        <div class="fld" style="flex:1"><label>From</label><input type="time" id="exFrom"/></div>
+        <div class="fld" style="flex:1"><label>To</label><input type="time" id="exTo"/></div>
+      </div>
+      <div class="fld"><label>Label (optional)</label><input id="exLabel" placeholder="e.g. Team meeting"/></div>
+      <button class="btn btn-primary btn-sm" id="exAdd">+ Add exception</button>
+      <div id="exList" style="margin-top:16px"></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-out" id="exClose">Close</button></div>
   </div>
 </div>
 
@@ -395,14 +414,14 @@ function labelOf(l){ if(l.manual_status) return l.manual_status; if(l.manual_buc
 /* ============ Data layer ============ */
 const API = window.__LEADS_API || null;
 const LS_KEY='shine_leads_overlay_v3';
-let LEADS=[], overlay={};
+let LEADS=[], overlay={}, EXCEPTIONS=[];   // EXCEPTIONS = meeting/blackout windows, subtracted from speed-to-lead
 try{ overlay=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ overlay={}; }
 function persistOverlay(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(overlay)); }catch(e){} }
 // In LIVE (API) mode the server is the single source of truth — never let a local overlay mask
 // another user's changes. The overlay is only for offline preview mode (no backend).
 function applyOverlay(base){ if(API) return base.map(l=>({...l})); return base.filter(l=>!(overlay[l.id]&&overlay[l.id].hidden)).map(l=>{ const o=overlay[l.id]; return o?{...l,...o}:{...l}; }); }
 async function loadLeads(){
-  if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt); lastSyncedAt=j.syncedAt; }
+  if(API){ const r=await fetch(API.url+'&format=json'); const j=await r.json(); LEADS=applyOverlay(j.leads||[]); EXCEPTIONS=j.exceptions||[]; setSynced(j.syncedAt); lastSyncedAt=j.syncedAt; }
   else{ LEADS=applyOverlay(window.SHINE_LEADS||[]); setSynced(window.SHINE_SYNCED_AT); lastSyncedAt=window.SHINE_SYNCED_AT||null; }
 }
 async function saveLead(id,patch){
@@ -766,7 +785,7 @@ function checkOverdueNew(){
   document.querySelectorAll('#alerts .alert-card').forEach(el=>{ if(!overdue.has(el.dataset.id)) el.remove(); });   // drop banners once handled
 }
 
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');document.getElementById('excModal').classList.remove('show');} });
 
 /* ============ Auto-refresh: fast lightweight check every 10s; full fetch only when something changed ============ */
 async function autoRefresh(){
@@ -776,7 +795,7 @@ async function autoRefresh(){
     const s=await (await fetch(API.url+'&format=status')).json();  // tiny: just the sync timestamp
     if(s.syncedAt===lastSyncedAt) return;                          // nothing changed → cheap exit
     const r=await fetch(API.url+'&format=json'); const j=await r.json();
-    lastSyncedAt=j.syncedAt; LEADS=applyOverlay(j.leads||[]); setSynced(j.syncedAt);
+    lastSyncedAt=j.syncedAt; LEADS=applyOverlay(j.leads||[]); EXCEPTIONS=j.exceptions||EXCEPTIONS; setSynced(j.syncedAt);
     if(document.getElementById('drawer').classList.contains('show') && selected){
       const fresh=LEADS.find(x=>x.id===selected.id);              // keep the open lead in sync with other users
       if(fresh){ fresh._baseCalls=(fresh.calls||[]).slice(); selected=fresh; refreshDrawerLive(fresh); }
@@ -802,9 +821,11 @@ const COL_RANK={new:0,followup:1,quoting:2,quotes_sent:3,other:4,later:1,lost:-1
 // Leads arriving after 7pm / before 9am PST start the clock at 9am (nobody's calling overnight → don't inflate).
 function firstAddedTs(l){ const h=Array.isArray(l.new_lead_history)?l.new_lead_history.slice().sort():[]; return h.length?h[0]:(l.created_at||null); }
 function ptPartsJS(ms){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(ms)); const g=t=>+p.find(x=>x.type===t).value; return {y:g('year'),mo:g('month'),day:g('day'),h:g('hour'),mi:g('minute')}; }
-function pacificOpenMs(y,mo,day){ const guess=Date.UTC(y,mo-1,day,9,0,0); const a=ptPartsJS(guess); const diff=(a.h*60+a.mi)-9*60; return guess-diff*60000; }
+function pacificMsJS(y,mo,day,hh,mi){ const guess=Date.UTC(y,mo-1,day,hh,mi,0); const a=ptPartsJS(guess); const diff=(a.h*60+a.mi)-(hh*60+mi); return guess-diff*60000; }
+function pacificOpenMs(y,mo,day){ return pacificMsJS(y,mo,day,9,0); }
 function clampOfficeOpen(ms){ const p=ptPartsJS(ms); if(p.h>=19){ const d=new Date(Date.UTC(p.y,p.mo-1,p.day)); d.setUTCDate(d.getUTCDate()+1); return pacificOpenMs(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()); } if(p.h<9){ return pacificOpenMs(p.y,p.mo,p.day); } return ms; }
-function speedToLeadMins(l){ const added=firstAddedTs(l); if(!added) return null; const cs=(l.calls||[]).map(callTs).filter(Boolean).map(t=>new Date(t).getTime()).filter(t=>!isNaN(t)); if(!cs.length) return null; const first=Math.min(...cs), ai=new Date(added).getTime(); if(isNaN(ai)) return null; const adj=clampOfficeOpen(ai); const eff=first<adj?ai:adj; if(first<eff) return null; return Math.round((first-eff)/60000); }
+function exWindowsJS(){ const out=[]; for(const ex of EXCEPTIONS||[]){ if(!ex||!ex.date||!ex.start||!ex.end) continue; const [y,mo,d]=ex.date.split('-').map(Number); const [sh,sm]=ex.start.split(':').map(Number); const [eh,em]=ex.end.split(':').map(Number); const s=pacificMsJS(y,mo,d,sh,sm),e=pacificMsJS(y,mo,d,eh,em); if(e>s) out.push({s,e}); } return out; }
+function speedToLeadMins(l){ const added=firstAddedTs(l); if(!added) return null; const cs=(l.calls||[]).map(callTs).filter(Boolean).map(t=>new Date(t).getTime()).filter(t=>!isNaN(t)); if(!cs.length) return null; const first=Math.min(...cs), ai=new Date(added).getTime(); if(isNaN(ai)) return null; const adj=clampOfficeOpen(ai); const eff=first<adj?ai:adj; if(first<eff) return null; let elapsed=first-eff; for(const w of exWindowsJS()){ const s=Math.max(eff,w.s),e=Math.min(first,w.e); if(e>s) elapsed-=(e-s); } if(elapsed<0)elapsed=0; return Math.round(elapsed/60000); }
 function fmtDur(mins){ if(mins==null||isNaN(mins)) return '—'; mins=Math.round(mins); if(mins<1) return '<1m'; if(mins<60) return mins+'m'; const h=Math.floor(mins/60),m=mins%60; if(h<24) return m?`${h}h ${m}m`:`${h}h`; const d=Math.floor(h/24),hh=h%24; return hh?`${d}d ${hh}h`:`${d}d`; }
 function pacificToday(){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; const d=parseD(iso); if(!d) return null; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
@@ -840,6 +861,39 @@ function renderMetrics(){
   document.getElementById('mThisMonth').onclick=()=>{ setThisMonth(); renderMetrics(); };
   document.getElementById('mNote').textContent='Counts every lead that ever reached each step (lost leads included), by the date it came into GHL. Accuracy improves as stage history builds up over time.';
 })();
+
+/* ============ Speed-to-lead exceptions (meeting / blackout windows) ============ */
+const excModal=document.getElementById('excModal');
+function renderExceptions(){
+  const el=document.getElementById('exList');
+  const list=(EXCEPTIONS||[]).slice().sort((a,b)=>((a.date+a.start)<(b.date+b.start)?-1:1));
+  if(!list.length){ el.innerHTML='<div style="color:var(--faint);font-size:13px">No exceptions yet. Add your meeting times above.</div>'; return; }
+  el.innerHTML=list.map(ex=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line-2)">
+    <div style="font-size:13px"><b>${esc(fmtDate(ex.date))}</b> · ${esc(ex.start)}–${esc(ex.end)}${ex.label?` · <span style="color:var(--muted)">${esc(ex.label)}</span>`:''}</div>
+    <button class="icobtn" data-del="${esc(ex.id)}" title="Remove">&times;</button></div>`).join('');
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ EXCEPTIONS=EXCEPTIONS.filter(x=>x.id!==b.dataset.del); saveExceptions(); });
+}
+async function saveExceptions(){
+  renderExceptions();
+  if(!API){ renderMetrics(); return; }
+  try{ await fetch(API.url+'&action=set-exceptions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exceptions:EXCEPTIONS})});
+    await loadLeads(); await loadMetrics(); render(); renderExceptions();
+    if(selected) drawSpeedToLead(selected);
+  }catch(e){ toast('Save failed — check connection'); }
+}
+if(document.getElementById('excBtn')){
+  document.getElementById('excBtn').onclick=()=>{ renderExceptions(); excModal.classList.add('show'); };
+  document.getElementById('exClose').onclick=()=>excModal.classList.remove('show');
+  excModal.onclick=e=>{ if(e.target===excModal) excModal.classList.remove('show'); };
+  document.getElementById('exAdd').onclick=()=>{
+    const date=document.getElementById('exDate').value, from=document.getElementById('exFrom').value, to=document.getElementById('exTo').value, label=document.getElementById('exLabel').value.trim();
+    if(!date||!from||!to){ toast('Pick a date, from and to time'); return; }
+    if(to<=from){ toast('End time must be after start'); return; }
+    EXCEPTIONS.push({id:'ex-'+Date.now(), date, start:from, end:to, label});
+    document.getElementById('exLabel').value='';
+    saveExceptions(); toast('Exception saved');
+  };
+}
 
 // location label in the title bar (SHINE · Victoria / Prince George)
 (function(){ const loc=window.__LEADS_LOCATION||'Leads'; const el=document.querySelector('.brand-sub'); if(el) el.textContent=loc; document.title='Shine Leads — '+loc; })();
