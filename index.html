@@ -896,7 +896,7 @@ function renderMetrics(){
   let stlMed=null,stlAvg=null; if(stlVals.length){ stlVals.sort((a,b)=>a-b); const k=Math.floor(stlVals.length/2); stlMed=stlVals.length%2?stlVals[k]:(stlVals[k-1]+stlVals[k])/2; stlAvg=stlVals.reduce((a,b)=>a+b,0)/stlVals.length; }
   document.getElementById('mSTL').textContent=stlMed!=null?fmtDur(stlMed):'—';
   document.getElementById('mSTLSub').textContent=stlVals.length?`median · avg ${fmtDur(stlAvg)} · ${stlVals.length} lead${stlVals.length===1?'':'s'}`:'no calls logged yet';
-  document.getElementById('mActivity').innerHTML=`<span class="lbl">Done this period</span><span>🧾 <b>${qsDone}</b> quotes sent</span><span class="sep">·</span><span>✅ <b>${jbDone}</b> jobs booked</span><span class="sep" style="flex:1"></span><span style="font-size:11px;color:var(--faint)">by the date it happened — matches Jobber</span>`;
+  document.getElementById('mActivity').innerHTML=`<span class="lbl">Done this period</span><span>🧾 <b>${qsDone}</b> quotes sent</span><span class="sep">·</span><span>✅ <b>${jbDone}</b> jobs booked</span><span class="sep">·</span><span>📈 <b>${pct(jbDone,qsDone)}</b> conversion</span><span class="sep" style="flex:1"></span><span style="font-size:11px;color:var(--faint)">by the date it happened — matches Jobber</span>`;
 }
 (function initMetrics(){
   setThisMonth();
