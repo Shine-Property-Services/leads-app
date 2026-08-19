@@ -246,7 +246,7 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="msub" id="mLostSub">lost leads ÷ leads in</div>
     </div>
     <div class="mstat stl">
-      <div class="mlabel">Avg speed to lead</div>
+      <div class="mlabel">Speed to lead</div>
       <div class="mval" id="mSTL">—</div>
       <div class="msub" id="mSTLSub">first call after lead came in</div>
     </div>
@@ -763,10 +763,10 @@ async function loadMetrics(){
 function inMetricRange(d,from,to){ const y=pacificYmd(d); if(!y) return false; if(from&&y<from) return false; if(to&&y>to) return false; return true; }
 function renderMetrics(){
   const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
-  let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0,stlSum=0,stlN=0;
+  let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0; const stlVals=[];
   for(const m of METRICS){ if(!(inMetricRange(m.c,from,to)||inMetricRange(m.r,from,to))) continue;
     leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++;
-    if(m.stl!=null){ stlSum+=m.stl; stlN++; } }
+    if(m.stl!=null) stlVals.push(m.stl); }
   const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
   document.getElementById('mBooking').textContent=pct(quoting,leadsIn);
   document.getElementById('mBookingSub').textContent=`${quoting} for quoting ÷ ${leadsIn} leads in`;
@@ -774,8 +774,9 @@ function renderMetrics(){
   document.getElementById('mConversionSub').textContent=`${jobs} jobs booked ÷ ${quoteSent} quotes sent`;
   document.getElementById('mLost').textContent=pct(lost,leadsIn);
   document.getElementById('mLostSub').textContent=`${lost} lost leads ÷ ${leadsIn} leads in`;
-  document.getElementById('mSTL').textContent=stlN?fmtDur(stlSum/stlN):'—';
-  document.getElementById('mSTLSub').textContent=stlN?`avg across ${stlN} contacted lead${stlN===1?'':'s'}`:'no calls logged yet';
+  let stlMed=null,stlAvg=null; if(stlVals.length){ stlVals.sort((a,b)=>a-b); const k=Math.floor(stlVals.length/2); stlMed=stlVals.length%2?stlVals[k]:(stlVals[k-1]+stlVals[k])/2; stlAvg=stlVals.reduce((a,b)=>a+b,0)/stlVals.length; }
+  document.getElementById('mSTL').textContent=stlMed!=null?fmtDur(stlMed):'—';
+  document.getElementById('mSTLSub').textContent=stlVals.length?`median · avg ${fmtDur(stlAvg)} · ${stlVals.length} lead${stlVals.length===1?'':'s'}`:'no calls logged yet';
 }
 (function initMetrics(){
   setThisMonth();
