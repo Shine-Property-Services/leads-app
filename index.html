@@ -115,6 +115,10 @@ td .nm{font-weight:700;color:var(--ink)}
 .mrange label{font-size:11px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 .mrange input{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;color:var(--ink);background:#fff}
 .mrange .btn-sm{align-self:flex-end}
+.mactivity{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12.5px;color:var(--muted);padding:9px 14px;background:var(--bg);border-radius:10px;margin-top:2px}
+.mactivity .lbl{font-weight:800;color:var(--navy);text-transform:uppercase;font-size:10.5px;letter-spacing:.04em}
+.mactivity b{color:var(--navy);font-size:15px}
+.mactivity .sep{color:var(--faint)}
 .mnote{flex-basis:100%;font-size:11px;color:var(--faint);margin-top:-4px}
 @media(max-width:640px){ .metrics{gap:10px} .mstat{flex:1;min-width:120px;padding:9px 12px} .mval{font-size:22px} .mrange{margin-left:0;flex-basis:100%} .mrange label{flex:1} .mrange input{width:100%} }
 /* overdue new-lead alert (10 min, no contact) */
@@ -270,6 +274,7 @@ td .nm{font-weight:700;color:var(--ink)}
       <button class="btn btn-out btn-sm" id="excBtn" title="Meeting/blackout windows excluded from speed to lead">⏸ Exceptions</button>
       <button class="btn btn-amber btn-sm" id="notifBtn" title="Desktop pop-up alerts for new leads">🔔 Enable alerts</button>
     </div>
+    <div class="mactivity" id="mActivity"></div>
     <div class="mnote" id="mNote"></div>
   </div>
   <div class="count-note" id="countNote"></div>
@@ -833,7 +838,8 @@ function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; 
 function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
-  else { METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l) })); }
+  else { const stAt=(l,st)=>{ const h=Array.isArray(l.stage_history)?l.stage_history:[]; let m=null; for(const e of h){ if(e&&e.stage===st&&e.at&&(!m||e.at>m)) m=e.at; } return m; };
+    METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l), qsAt:stAt(l,'Quote Sent'), jbAt:stAt(l,'Job Booked') })); }
   renderMetrics();
 }
 // a lead counts in the range if EITHER its contact-created date (c) or its latest request date (r) falls in it
@@ -841,7 +847,11 @@ function inMetricRange(d,from,to){ const y=pacificYmd(d); if(!y) return false; i
 function renderMetrics(){
   const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
   let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0; const stlVals=[];
-  for(const m of METRICS){ if(!(inMetricRange(m.c,from,to)||inMetricRange(m.r,from,to))) continue;
+  let qsDone=0,jbDone=0;   // event-based: quotes sent / jobs booked BY DATE in the range (matches Jobber), independent of cohort
+  for(const m of METRICS){
+    if(m.qsAt && inMetricRange(m.qsAt,from,to)) qsDone++;
+    if(m.jbAt && inMetricRange(m.jbAt,from,to)) jbDone++;
+    if(!(inMetricRange(m.c,from,to)||inMetricRange(m.r,from,to))) continue;
     leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++;
     if(m.stl!=null) stlVals.push(m.stl); }
   const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
@@ -854,13 +864,14 @@ function renderMetrics(){
   let stlMed=null,stlAvg=null; if(stlVals.length){ stlVals.sort((a,b)=>a-b); const k=Math.floor(stlVals.length/2); stlMed=stlVals.length%2?stlVals[k]:(stlVals[k-1]+stlVals[k])/2; stlAvg=stlVals.reduce((a,b)=>a+b,0)/stlVals.length; }
   document.getElementById('mSTL').textContent=stlMed!=null?fmtDur(stlMed):'—';
   document.getElementById('mSTLSub').textContent=stlVals.length?`median · avg ${fmtDur(stlAvg)} · ${stlVals.length} lead${stlVals.length===1?'':'s'}`:'no calls logged yet';
+  document.getElementById('mActivity').innerHTML=`<span class="lbl">Done this period</span><span>🧾 <b>${qsDone}</b> quotes sent</span><span class="sep">·</span><span>✅ <b>${jbDone}</b> jobs booked</span><span class="sep" style="flex:1"></span><span style="font-size:11px;color:var(--faint)">by the date it happened — matches Jobber</span>`;
 }
 (function initMetrics(){
   setThisMonth();
   document.getElementById('mFrom').onchange=renderMetrics;
   document.getElementById('mTo').onchange=renderMetrics;
   document.getElementById('mThisMonth').onclick=()=>{ setThisMonth(); renderMetrics(); };
-  document.getElementById('mNote').textContent='Counts every lead that ever reached each step (lost leads included), by the date it came into GHL. Accuracy improves as stage history builds up over time.';
+  document.getElementById('mNote').textContent='The three rates above are for leads that CAME IN during the range (by intake date). “Done this period” counts quotes/jobs by the date they actually happened — that’s the Jobber-style activity view. Activity is fully accurate from Aug 18 onward as stage history builds.';
 })();
 
 /* ============ Speed-to-lead exceptions (meeting / blackout windows) ============ */
