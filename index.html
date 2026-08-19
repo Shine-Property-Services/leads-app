@@ -798,9 +798,13 @@ function refreshDrawerLive(l){
 /* ============ Metrics bar (booking rate + conversion rate) ============ */
 let METRICS=[];
 const COL_RANK={new:0,followup:1,quoting:2,quotes_sent:3,other:4,later:1,lost:-1,repository:-1};
-// speed to lead = first call logged − when the lead came in
+// speed to lead = first call logged − when the lead could first be worked.
+// Leads arriving after 7pm / before 9am PST start the clock at 9am (nobody's calling overnight → don't inflate).
 function firstAddedTs(l){ const h=Array.isArray(l.new_lead_history)?l.new_lead_history.slice().sort():[]; return h.length?h[0]:(l.created_at||null); }
-function speedToLeadMins(l){ const added=firstAddedTs(l); if(!added) return null; const cs=(l.calls||[]).map(callTs).filter(Boolean).map(t=>new Date(t).getTime()).filter(t=>!isNaN(t)); if(!cs.length) return null; const first=Math.min(...cs), ai=new Date(added).getTime(); if(isNaN(ai)||first<ai) return null; return Math.round((first-ai)/60000); }
+function ptPartsJS(ms){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(ms)); const g=t=>+p.find(x=>x.type===t).value; return {y:g('year'),mo:g('month'),day:g('day'),h:g('hour'),mi:g('minute')}; }
+function pacificOpenMs(y,mo,day){ const guess=Date.UTC(y,mo-1,day,9,0,0); const a=ptPartsJS(guess); const diff=(a.h*60+a.mi)-9*60; return guess-diff*60000; }
+function clampOfficeOpen(ms){ const p=ptPartsJS(ms); if(p.h>=19){ const d=new Date(Date.UTC(p.y,p.mo-1,p.day)); d.setUTCDate(d.getUTCDate()+1); return pacificOpenMs(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()); } if(p.h<9){ return pacificOpenMs(p.y,p.mo,p.day); } return ms; }
+function speedToLeadMins(l){ const added=firstAddedTs(l); if(!added) return null; const cs=(l.calls||[]).map(callTs).filter(Boolean).map(t=>new Date(t).getTime()).filter(t=>!isNaN(t)); if(!cs.length) return null; const first=Math.min(...cs), ai=new Date(added).getTime(); if(isNaN(ai)) return null; const adj=clampOfficeOpen(ai); const eff=first<adj?ai:adj; if(first<eff) return null; return Math.round((first-eff)/60000); }
 function fmtDur(mins){ if(mins==null||isNaN(mins)) return '—'; mins=Math.round(mins); if(mins<1) return '<1m'; if(mins<60) return mins+'m'; const h=Math.floor(mins/60),m=mins%60; if(h<24) return m?`${h}h ${m}m`:`${h}h`; const d=Math.floor(h/24),hh=h%24; return hh?`${d}d ${hh}h`:`${d}d`; }
 function pacificToday(){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; const d=parseD(iso); if(!d) return null; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
