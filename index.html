@@ -783,26 +783,34 @@ function showLeadAlert(l){
   c.querySelector('[data-dismiss]').onclick=()=>{ dismissed.add(l.id); c.remove(); };
   box.appendChild(c);
 }
-// initial alert: fire the moment a brand-new lead lands in New Leads (separate from the 10-min nudge)
-let knownIds=null;
-function showNewLeadArrival(l){
+// initial alert: fire the moment a lead is produced — brand-new OR a returning client re-entering (separate from the 10-min nudge)
+let knownIds=null, nlhSeen=null;
+function nlhLen(l){ return Array.isArray(l.new_lead_history)?l.new_lead_history.length:0; }   // grows each time a lead (re)enters New Lead
+function showNewLeadArrival(l, returning){
+  const title = returning ? '🔁 Returning lead — new request' : '🆕 New lead just came in';
+  const key = (returning?'ret-':'new-')+l.id;
   try{ if('Notification' in window && Notification.permission==='granted'){
-    const n=new Notification('🆕 New lead just came in', { body:(l.name||'New lead')+(l.source?(' · '+l.source):''), tag:'new-'+l.id });
+    const n=new Notification(title, { body:(l.name||'Lead')+(l.source?(' · '+l.source):''), tag:key });
     n.onclick=()=>{ try{window.focus();}catch(e){} openDrawer(l.id); n.close(); };
   } }catch(e){}
-  const box=document.getElementById('alerts'); if(!box || box.querySelector(`[data-newid="${l.id}"]`)) return;
-  const c=document.createElement('div'); c.className='alert-card new'; c.dataset.newid=l.id;
-  c.innerHTML=`<h4>🆕 New lead just came in</h4><div class="an">${esc(l.name||'(no name)')}</div><div class="am">${l.phone?esc(fmtPhone(l.phone))+' · ':''}${esc(l.source||'New Lead')}</div><div class="arow"><button class="btn btn-primary btn-sm" data-open>Open lead</button><button class="btn btn-out btn-sm" data-dismiss>Dismiss</button></div>`;
+  const box=document.getElementById('alerts'); if(!box || box.querySelector(`[data-arrid="${key}"]`)) return;
+  const c=document.createElement('div'); c.className='alert-card new'; c.dataset.arrid=key;
+  c.innerHTML=`<h4>${title}</h4><div class="an">${esc(l.name||'(no name)')}</div><div class="am">${l.phone?esc(fmtPhone(l.phone))+' · ':''}${esc(l.source||'New Lead')}</div><div class="arow"><button class="btn btn-primary btn-sm" data-open>Open lead</button><button class="btn btn-out btn-sm" data-dismiss>Dismiss</button></div>`;
   c.querySelector('[data-open]').onclick=()=>{ openDrawer(l.id); c.remove(); };
   c.querySelector('[data-dismiss]').onclick=()=>{ c.remove(); };
   box.appendChild(c);
   setTimeout(()=>{ c.remove(); }, 45000);   // heads-up banner auto-clears (the 10-min nudge is the sticky one)
 }
 function checkNewArrivals(){
-  if(knownIds===null){ knownIds=new Set(LEADS.map(l=>l.id)); return; }   // seed silently on first load — no backlog replay
-  for(const l of LEADS){ if(knownIds.has(l.id)) continue;
-    if(colOf(l)==='new' && l.origin!=='manual' && inAlertHours()) showNewLeadArrival(l);   // brand-new GHL lead in New Leads
-    knownIds.add(l.id); }
+  if(knownIds===null){ knownIds=new Set(); nlhSeen=new Map(); for(const l of LEADS){ knownIds.add(l.id); nlhSeen.set(l.id, nlhLen(l)); } return; }   // seed silently on load
+  for(const l of LEADS){
+    const isNew=!knownIds.has(l.id), curLen=nlhLen(l), seenLen=nlhSeen.has(l.id)?nlhSeen.get(l.id):0;
+    if(l.origin!=='manual' && inAlertHours()){
+      if(isNew){ if(colOf(l)==='new') showNewLeadArrival(l,false); }        // brand-new lead in New Leads
+      else if(curLen>seenLen) showNewLeadArrival(l,true);                    // returning client re-entered New Lead
+    }
+    knownIds.add(l.id); nlhSeen.set(l.id, curLen);
+  }
 }
 function checkOverdueNew(){
   const overdue=new Set(LEADS.filter(isOverdueNew).map(l=>l.id));
