@@ -117,6 +117,19 @@ td .nm{font-weight:700;color:var(--ink)}
 .mrange .btn-sm{align-self:flex-end}
 .mnote{flex-basis:100%;font-size:11px;color:var(--faint);margin-top:-4px}
 @media(max-width:640px){ .metrics{gap:10px} .mstat{flex:1;min-width:120px;padding:9px 12px} .mval{font-size:22px} .mrange{margin-left:0;flex-basis:100%} .mrange label{flex:1} .mrange input{width:100%} }
+/* overdue new-lead alert (10 min, no contact) */
+.card.overdue{ border-left-color:var(--red)!important; background:#fff5f3; animation:odpulse 2s ease-in-out infinite; }
+@keyframes odpulse{ 0%,100%{box-shadow:0 0 0 1px var(--red) inset, var(--shadow)} 50%{box-shadow:0 0 0 2px var(--red) inset, 0 0 12px rgba(217,74,61,.35)} }
+.odflag{ display:none; align-items:center; gap:4px; font-size:10.5px; font-weight:800; color:#fff; background:var(--red); padding:2px 7px; border-radius:999px; }
+.card.overdue .odflag{ display:inline-flex; }
+#alerts{ position:fixed; top:14px; right:14px; z-index:99999; display:flex; flex-direction:column; gap:10px; max-width:330px; }
+.alert-card{ background:#fff; border-left:5px solid var(--red); border-radius:12px; box-shadow:var(--shadow-lg); padding:12px 14px; animation:alertin .25s ease; }
+@keyframes alertin{ from{transform:translateX(24px);opacity:0} to{transform:none;opacity:1} }
+.alert-card h4{ font-size:12px; font-weight:800; color:var(--red); display:flex; align-items:center; gap:6px; text-transform:uppercase; letter-spacing:.03em; }
+.alert-card .an{ font-weight:800; color:var(--navy); font-size:16px; margin-top:3px; }
+.alert-card .am{ font-size:12px; color:var(--muted); margin:2px 0 9px; }
+.alert-card .arow{ display:flex; gap:8px; }
+@media(max-width:640px){ #alerts{ left:10px; right:10px; max-width:none; } }
 
 .scrim{position:fixed;inset:0;background:rgba(1,25,45,.45);z-index:50;opacity:0;pointer-events:none;transition:.2s}
 .scrim.show{opacity:1;pointer-events:auto}
@@ -316,6 +329,7 @@ td .nm{font-weight:700;color:var(--ink)}
   </div>
 </div>
 
+<div id="alerts"></div>
 <div id="toast"></div>
 
 <script>
@@ -490,7 +504,8 @@ function card(l){
   const src=(l.ghl_contact_id)?'<span class="ghl-dot" title="Synced from GHL"></span>':'';
   const isLater=l.manual_bucket==='later';
   const mflag=l.manual_status?'<span class="mflag" title="Manual status">M</span>':'';
-  return `<div class="card" draggable="true" data-id="${l.id}" style="border-left-color:${colorOf(l)}">
+  const odNew=isOverdueNew(l);   // 10+ min in New Leads with no contact
+  return `<div class="card${odNew?' overdue':''}" draggable="true" data-id="${l.id}" style="border-left-color:${odNew?'var(--red)':colorOf(l)}">
     <span class="star ${isLater?'on':''}" data-star="${l.id}" title="For later">${isLater?'★':'☆'}</span>
     <div class="nm">${src}${esc(l.name)||'<span style="color:var(--faint)">(no name)</span>'}</div>
     <div><span class="pill" style="background:${colorOf(l)}22;color:${colorOf(l)}">${esc(labelOf(l))}</span>${mflag}</div>
@@ -498,6 +513,7 @@ function card(l){
     <div class="foot">
       <span class="calls-badge">📞 ${l.times_called||0} call${(l.times_called||0)===1?'':'s'}${lc?` · ${fmtDate(lc)}`:''}</span>
       ${follow?`<span class="calls-badge ${overdue?'overdue':''}">⏰ ${fmtDate(follow)}</span>`:''}
+      <span class="odflag">🔴 No contact 10m+</span>
     </div>
   </div>`;
 }
@@ -548,6 +564,7 @@ function render(){
   bv.classList.toggle('hidden',view!=='board'); tv.classList.toggle('hidden',view!=='table');
   if(vis.length===0){ empty.classList.remove('hidden'); empty.textContent='No leads match your filters.'; bv.classList.add('hidden'); tv.classList.add('hidden'); }
   else{ empty.classList.add('hidden'); if(view==='board')renderBoard(); else renderTable(); }
+  if(typeof checkOverdueNew==='function') checkOverdueNew();   // refresh red cards + fire any due alerts
 }
 
 /* ============ Cards / DnD ============ */
@@ -715,6 +732,40 @@ let searchT; document.getElementById('q').oninput=e=>{clearTimeout(searchT);sear
 /* ============ Toast ============ */
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.innerHTML=`<span class="tick">✓</span>${esc(msg)}`; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
 
+/* ============ New-lead SLA alert: 10 min in New Leads with no contact → red card + pop-up (8am–7pm PST) ============ */
+const OD_MIN=10;
+const alerted=new Set(), dismissed=new Set(); let alertsSeeded=false;
+function enteredNewTs(l){ return l.stage_changed_at || firstAddedTs(l) || l.created_at || null; }   // when it landed in New Leads
+function odAgeMins(ts){ if(!ts) return 0; const ms=new Date(ts).getTime(); if(isNaN(ms)) return 0; return (Date.now()-ms)/60000; }
+function isOverdueNew(l){ if(colOf(l)!=='new') return false; if((l.calls&&l.calls.length)||(l.times_called||0)>0) return false; return odAgeMins(enteredNewTs(l))>=OD_MIN; }
+function pacificHour(){ return +new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',hourCycle:'h23'}).format(new Date()); }
+function inAlertHours(){ const h=pacificHour(); return h>=8 && h<19; }   // 8:00am–7:00pm PST; outside → red card only, no pop-up
+function requestNotify(){ try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission().catch(()=>{}); }catch(e){} }
+function showLeadAlert(l){
+  const mins=Math.max(OD_MIN, Math.round(odAgeMins(enteredNewTs(l))));
+  // OS-level notification: shows on top of other windows and stays until dismissed
+  try{ if('Notification' in window && Notification.permission==='granted'){
+    const n=new Notification('🔴 New lead needs contact', { body:(l.name||'New lead')+' — '+mins+'m in New Leads, no contact yet', tag:'lead-'+l.id, requireInteraction:true });
+    n.onclick=()=>{ try{window.focus();}catch(e){} openDrawer(l.id); n.close(); };
+  } }catch(e){}
+  // in-app banner (visible when the tab is focused)
+  const box=document.getElementById('alerts'); if(!box || box.querySelector(`[data-id="${l.id}"]`)) return;
+  const c=document.createElement('div'); c.className='alert-card'; c.dataset.id=l.id;
+  c.innerHTML=`<h4>🔴 New lead needs contact</h4><div class="an">${esc(l.name||'(no name)')}</div><div class="am">${l.phone?esc(fmtPhone(l.phone))+' · ':''}${mins}m in New Leads, no contact</div><div class="arow"><button class="btn btn-primary btn-sm" data-open>Open lead</button><button class="btn btn-out btn-sm" data-dismiss>Dismiss</button></div>`;
+  c.querySelector('[data-open]').onclick=()=>{ openDrawer(l.id); c.remove(); };
+  c.querySelector('[data-dismiss]').onclick=()=>{ dismissed.add(l.id); c.remove(); };
+  box.appendChild(c);
+}
+function checkOverdueNew(){
+  const overdue=new Set(LEADS.filter(isOverdueNew).map(l=>l.id));
+  document.querySelectorAll('.card[data-id]').forEach(el=>el.classList.toggle('overdue', overdue.has(el.dataset.id)));
+  if(!alertsSeeded){ overdue.forEach(id=>alerted.add(id)); alertsSeeded=true; }   // seed silently on load — don't pop the whole backlog
+  else { overdue.forEach(id=>{ if(alerted.has(id)||dismissed.has(id)) return; alerted.add(id); if(inAlertHours()){ const l=LEADS.find(x=>x.id===id); if(l) showLeadAlert(l); } }); }
+  [...alerted].forEach(id=>{ if(!overdue.has(id)) alerted.delete(id); });      // contacted/moved → clears (can re-alert if it ever recurs)
+  [...dismissed].forEach(id=>{ if(!overdue.has(id)) dismissed.delete(id); });
+  document.querySelectorAll('#alerts .alert-card').forEach(el=>{ if(!overdue.has(el.dataset.id)) el.remove(); });   // drop banners once handled
+}
+
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');} });
 
 /* ============ Auto-refresh: fast lightweight check every 10s; full fetch only when something changed ============ */
@@ -788,6 +839,9 @@ function renderMetrics(){
 
 // location label in the title bar (SHINE · Victoria / Prince George)
 (function(){ const loc=window.__LEADS_LOCATION||'Leads'; const el=document.querySelector('.brand-sub'); if(el) el.textContent=loc; document.title='Shine Leads — '+loc; })();
+requestNotify();   // ask once for OS-notification permission (so pop-ups can show over other windows)
+window.addEventListener('pointerdown', function once(){ requestNotify(); }, {once:true});
+setInterval(checkOverdueNew, 20000);   // re-evaluate the 10-min SLA even when no data changes
 (async function(){ await loadLeads(); render(); await loadMetrics(); if(API) setInterval(autoRefresh, 10000); })();
 </script>
 </body>
