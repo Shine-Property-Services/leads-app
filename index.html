@@ -871,24 +871,26 @@ function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom'
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
   else { const stAt=(l,st)=>{ const h=Array.isArray(l.stage_history)?l.stage_history:[]; let m=null; for(const e of h){ if(e&&e.stage===st&&e.at&&(!m||e.at>m)) m=e.at; } return m; };
-    METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l), qsAt:stAt(l,'Quote Sent'), jbAt:stAt(l,'Job Booked') })); }
+    METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l), qsAt:stAt(l,'Quote Sent'), jbAt:stAt(l,'Job Booked'), inb:((l.source||'').includes('quote-call-booked')) })); }
   renderMetrics();
 }
 // a lead counts in the range if EITHER its contact-created date (c) or its latest request date (r) falls in it
 function inMetricRange(d,from,to){ const y=pacificYmd(d); if(!y) return false; if(from&&y<from) return false; if(to&&y>to) return false; return true; }
 function renderMetrics(){
   const from=document.getElementById('mFrom').value, to=document.getElementById('mTo').value;
-  let leadsIn=0,quoting=0,quoteSent=0,jobs=0,lost=0; const stlVals=[];
+  let leadsIn=0,quoteSent=0,jobs=0,lost=0,webIn=0,webQuoting=0,inbIn=0; const stlVals=[];
   let qsDone=0,jbDone=0;   // event-based: quotes sent / jobs booked BY DATE in the range (matches Jobber), independent of cohort
   for(const m of METRICS){
     if(m.qsAt && inMetricRange(m.qsAt,from,to)) qsDone++;
     if(m.jbAt && inMetricRange(m.jbAt,from,to)) jbDone++;
     if(!(inMetricRange(m.c,from,to)||inMetricRange(m.r,from,to))) continue;
-    leadsIn++; if(m.rank>=2)quoting++; if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++;
+    leadsIn++;
+    if(m.inb) inbIn++; else { webIn++; if(m.rank>=2) webQuoting++; }   // inbound-call leads are auto-booked → split out of booking rate
+    if(m.rank>=3)quoteSent++; if(m.rank>=4||m.won)jobs++; if(m.lost)lost++;
     if(m.stl!=null) stlVals.push(m.stl); }
   const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
-  document.getElementById('mBooking').textContent=pct(quoting,leadsIn);
-  document.getElementById('mBookingSub').textContent=`${quoting} for quoting ÷ ${leadsIn} leads in`;
+  document.getElementById('mBooking').textContent=pct(webQuoting,webIn);
+  document.getElementById('mBookingSub').textContent=`${webQuoting} for quoting ÷ ${webIn} web leads${inbIn?` · +${inbIn} inbound`:''}`;
   document.getElementById('mConversion').textContent=pct(jobs,quoteSent);
   document.getElementById('mConversionSub').textContent=`${jobs} jobs booked ÷ ${quoteSent} quotes sent`;
   document.getElementById('mLost').textContent=pct(lost,leadsIn);
@@ -903,7 +905,7 @@ function renderMetrics(){
   document.getElementById('mFrom').onchange=renderMetrics;
   document.getElementById('mTo').onchange=renderMetrics;
   document.getElementById('mThisMonth').onclick=()=>{ setThisMonth(); renderMetrics(); };
-  document.getElementById('mNote').textContent='The three rates above are for leads that CAME IN during the range (by intake date). “Done this period” counts quotes/jobs by the date they actually happened — that’s the Jobber-style activity view. Activity is fully accurate from Aug 18 onward as stage history builds.';
+  document.getElementById('mNote').textContent='Rates are for leads that CAME IN during the range (by intake). Booking rate is WEB/form leads only — inbound-call leads (created straight at For Quoting) are auto-booked and shown as “+N inbound”. “Done this period” counts quotes/jobs by the date they happened (Jobber-style), and includes inbound. Activity is fully accurate from Aug 18 onward.';
 })();
 
 /* ============ Speed-to-lead exceptions (meeting / blackout windows) ============ */
