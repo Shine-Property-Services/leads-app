@@ -826,7 +826,14 @@ let toastT; function toast(msg){ const t=document.getElementById('toast'); t.inn
 const OD_MIN=10;
 const alerted=new Set(), dismissed=new Set(); let alertsSeeded=false;
 function enteredNewTs(l){ return l.stage_changed_at || firstAddedTs(l) || l.created_at || null; }   // when it landed in New Leads
-function odAgeMins(ts){ if(!ts) return 0; const ms=new Date(ts).getTime(); if(isNaN(ms)) return 0; return (Date.now()-ms)/60000; }
+// the 10-min clock only starts when the office opens: 9am weekdays, 2pm weekends (Pacific). Off-hours arrivals wait for the next open.
+function pacDow(y,mo,day){ return new Date(Date.UTC(y,mo-1,day)).getUTCDay(); }   // 0=Sun … 6=Sat (Pacific calendar date)
+function alertOpenH(dow){ return (dow===0||dow===6)?14:9; }                        // weekend 2pm, weekday 9am
+function clampAlertStart(ms){ const p=ptPartsJS(ms); const oh=alertOpenH(pacDow(p.y,p.mo,p.day));
+  if(p.h<oh) return pacificMsJS(p.y,p.mo,p.day,oh,0);                              // before open → today's open
+  if(p.h>=19){ const d=new Date(Date.UTC(p.y,p.mo-1,p.day)); d.setUTCDate(d.getUTCDate()+1); const ny=d.getUTCFullYear(),nm=d.getUTCMonth()+1,nd=d.getUTCDate(); return pacificMsJS(ny,nm,nd,alertOpenH(pacDow(ny,nm,nd)),0); }  // after 7pm → next day's open
+  return ms; }
+function odAgeMins(ts){ if(!ts) return 0; const ms=new Date(ts).getTime(); if(isNaN(ms)) return 0; return (Date.now()-clampAlertStart(ms))/60000; }
 function isOverdueNew(l){ if(colOf(l)!=='new') return false; if((l.calls&&l.calls.length)||(l.times_called||0)>0) return false; return odAgeMins(enteredNewTs(l))>=OD_MIN; }
 function pacificHour(){ return +new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',hourCycle:'h23'}).format(new Date()); }
 function inAlertHours(){ const h=pacificHour(); return h>=8 && h<19; }   // 8:00am–7:00pm PST; outside → red card only, no pop-up
