@@ -941,7 +941,7 @@ function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom'
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
   else { const stAt=(l,st)=>{ const h=Array.isArray(l.stage_history)?l.stage_history:[]; let m=null; for(const e of h){ if(e&&e.stage===st&&e.at&&(!m||e.at>m)) m=e.at; } return m; };
-    METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l), qsAt:stAt(l,'Quote Sent'), jbAt:stAt(l,'Job Booked'), inb:((l.source||'').includes('quote-call-booked')), rsn:(l.status_reason||null), rsnKind:(l.status_reason_kind||null), rsnAt:(l.status_reason_at||null) })); }
+    METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l), qsAt:stAt(l,'Quote Sent'), jbAt:stAt(l,'Job Booked'), inb:((l.source||'').includes('quote-call-booked')), lostCat:null, lostReason:null, lostAt:null })); }
   renderMetrics();
 }
 // a lead counts in the range if EITHER its contact-created date (c) or its latest request date (r) falls in it
@@ -1014,13 +1014,13 @@ if(document.getElementById('excBtn')){
 /* ============ Lost-reasons report ============ */
 function renderLostReport(){
   const from=document.getElementById('lostFrom').value, to=document.getElementById('lostTo').value;
-  const ab={}, ar={}; let total=0;
-  for(const m of METRICS){ if(!m.rsn||!inMetricRange(m.rsnAt,from,to)) continue; total++;
-    const bucket=(m.rsnKind==='archived')?ar:ab; bucket[m.rsn]=(bucket[m.rsn]||0)+1; }
-  const section=(title,obj)=>{ const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]); const sum=entries.reduce((s,[,n])=>s+n,0);
+  const cats={}; let total=0;
+  for(const m of METRICS){ if(!m.lostCat||!inMetricRange(m.lostAt,from,to)) continue; total++;
+    (cats[m.lostCat]=cats[m.lostCat]||{})[m.lostReason]=((cats[m.lostCat]||{})[m.lostReason]||0)+1; }
+  const section=(cat)=>{ const obj=cats[cat]||{}; const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]); const sum=entries.reduce((s,[,n])=>s+n,0);
     const rows = entries.length ? entries.map(([r,n])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:13px"><span>${esc(r)}</span><b style="color:var(--navy)">${n}</b></div>`).join('') : '<div style="color:var(--faint);font-size:12px;padding:4px 0">none</div>';
-    return `<div style="margin-top:14px"><div style="font-weight:800;color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.03em">${title} · ${sum}</div>${rows}</div>`; };
-  document.getElementById('lostReport').innerHTML = `<div style="font-size:13px;color:var(--muted);margin-top:4px"><b style="color:var(--navy);font-size:16px">${total}</b> lead${total===1?'':'s'} lost in range</div>` + section('Abandoned',ab) + section('Archived quote',ar);
+    return `<div style="margin-top:14px"><div style="font-weight:800;color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.03em">${cat} · ${sum}</div>${rows}</div>`; };
+  document.getElementById('lostReport').innerHTML = `<div style="font-size:13px;color:var(--muted);margin-top:4px"><b style="color:var(--navy);font-size:16px">${total}</b> lead${total===1?'':'s'} lost in range</div>` + ['Abandoned','Archived quote','Lost Lead'].map(section).join('');
 }
 if(document.getElementById('lostBtn')){
   const setLostMonth=()=>{ const t=pacificToday(); document.getElementById('lostFrom').value=t.slice(0,7)+'-01'; document.getElementById('lostTo').value=t; };
