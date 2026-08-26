@@ -341,7 +341,8 @@ td .nm{font-weight:700;color:var(--ink)}
       <button class="close" id="dashClose">&times;</button>
     </div>
     <div class="dashwrap">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Click a tile to see its breakdown below.</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:2px" id="ghlTodayLbl"></div>
+      <div style="font-size:12px;color:var(--faint);margin-bottom:8px">Click a tile to see its breakdown below.</div>
       <div class="metrics">
         <div class="mstat book" data-metric="book">
           <div class="mlabel">Booking rate</div><div class="mval" id="mBooking">—</div><div class="msub" id="mBookingSub">for quoting ÷ leads in</div>
@@ -947,7 +948,8 @@ function refreshDrawerLive(l){
 }
 
 /* ============ Metrics bar (booking rate + conversion rate) ============ */
-let METRICS=[], MB=null, dashActive='book';
+let METRICS=[], MB=null, dashActive='book', SERVER_TODAY=null, metricsDatesSet=false;
+function ghlToday(){ return SERVER_TODAY || pacificToday(); }   // GHL/Pacific "today" from the server, not the local clock
 const COL_RANK={new:0,followup:1,quoting:2,quotes_sent:3,other:4,later:1,lost:-1,repository:-1};
 // speed to lead = first call logged − when the lead could first be worked.
 // Leads arriving after 7pm / before 9am PST start the clock at 9am (nobody's calling overnight → don't inflate).
@@ -961,9 +963,10 @@ function speedToLeadMins(l){ const added=firstAddedTs(l); if(!added) return null
 function fmtDur(mins){ if(mins==null||isNaN(mins)) return '—'; mins=Math.round(mins); if(mins<1) return '<1m'; if(mins<60) return mins+'m'; const h=Math.floor(mins/60),m=mins%60; if(h<24) return m?`${h}h ${m}m`:`${h}h`; const d=Math.floor(h/24),hh=h%24; return hh?`${d}d ${hh}h`:`${d}d`; }
 function pacificToday(){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; const d=parseD(iso); if(!d) return null; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
-function setThisMonth(){ const t=pacificToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
+function setThisMonth(){ const t=ghlToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
+function showGhlToday(){ const el=document.getElementById('ghlTodayLbl'); if(el) el.textContent='Dates are Victoria/PG (Pacific) time · GHL today is '+ghlToday(); }
 async function loadMetrics(){
-  if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; }catch(e){} }
+  if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; if(j.today) SERVER_TODAY=j.today; if(!metricsDatesSet){ setThisMonth(); metricsDatesSet=true; } showGhlToday(); }catch(e){} }
   else { const stAt=(l,st)=>{ const h=Array.isArray(l.stage_history)?l.stage_history:[]; let m=null; for(const e of h){ if(e&&e.stage===st&&e.at&&(!m||e.at>m)) m=e.at; } return m; };
     METRICS=(window.SHINE_LEADS||[]).map(l=>({ c:(Array.isArray(l.new_lead_history)&&l.new_lead_history[0])||l.created_at||null, r:l.created_at||null, rank:(COL_RANK[colOf(l)]??-1), won:colOf(l)==='other', lost:(l.ghl_stage==='Lost Lead'&&(l.ghl_status||'').toLowerCase()==='open'), stl:speedToLeadMins(l), qsAt:stAt(l,'Quote Sent'), jbAt:stAt(l,'Job Booked'), inb:((l.source||'').includes('quote-call-booked')), lostCat:null, lostReason:null, lostAt:null })); }
   renderMetrics();
@@ -1072,7 +1075,7 @@ function renderLostReport(){
   document.getElementById('lostReport').innerHTML = `<div style="font-size:13px;color:var(--muted);margin-top:4px"><b style="color:var(--navy);font-size:16px">${total}</b> lead${total===1?'':'s'} lost in range</div>` + ['Abandoned','Archived quote','Lost Lead'].map(section).join('');
 }
 if(document.getElementById('lostBtn')){
-  const setLostMonth=()=>{ const t=pacificToday(); document.getElementById('lostFrom').value=t.slice(0,7)+'-01'; document.getElementById('lostTo').value=t; };
+  const setLostMonth=()=>{ const t=ghlToday(); document.getElementById('lostFrom').value=t.slice(0,7)+'-01'; document.getElementById('lostTo').value=t; };
   document.getElementById('lostBtn').onclick=()=>{ if(!document.getElementById('lostFrom').value) setLostMonth(); renderLostReport(); document.getElementById('lostModal').classList.add('show'); };
   document.getElementById('lostClose').onclick=()=>document.getElementById('lostModal').classList.remove('show');
   document.getElementById('lostModal').onclick=e=>{ if(e.target.id==='lostModal') document.getElementById('lostModal').classList.remove('show'); };
