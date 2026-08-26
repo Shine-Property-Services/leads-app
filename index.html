@@ -690,6 +690,7 @@ function openDrawer(id){
   if(l.source){ srcWrap.classList.remove('hidden'); document.getElementById('drSrc').textContent=l.source; } else srcWrap.classList.add('hidden');
   renderTimeline(l);
   document.getElementById('drawer').classList.add('show'); document.getElementById('scrim').classList.add('show');
+  const body=document.querySelector('#drawer .dr-body'); if(body) body.scrollTop=0;   // always open at the top (client details + Log call)
 }
 function refreshLaterBtn(){ const b=document.getElementById('drLaterBtn'); if(!selected)return; const on=selected.manual_bucket==='later'; b.textContent=on?'★ Remove from "For later"':'☆ Mark "For later"'; b.onclick=()=>toggleLater(selected.id); }
 function drawSpeedToLead(l){ const el=document.getElementById('drSTL'); if(!el)return; const mins=speedToLeadMins(l);
