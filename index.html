@@ -121,6 +121,21 @@ td .nm{font-weight:700;color:var(--ink)}
 .mactivity .sep{color:var(--faint)}
 .mnote{flex-basis:100%;font-size:11px;color:var(--faint);margin-top:-4px}
 @media(max-width:640px){ .metrics{gap:10px} .mstat{flex:1;min-width:120px;padding:9px 12px} .mval{font-size:22px} .mrange{margin-left:0;flex-basis:100%} .mrange label{flex:1} .mrange input{width:100%} }
+.tb-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.modal .box.dash{width:920px;max-width:95vw}
+.dashhead{display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dashhead h2{font-size:18px;color:var(--navy);margin-right:auto}
+.dashwrap{padding:18px 20px;max-height:82vh;overflow-y:auto}
+.dashwrap .metrics .mstat{cursor:pointer;flex:1;min-width:160px;transition:box-shadow .12s,transform .12s}
+.dashwrap .metrics .mstat:hover{transform:translateY(-1px)}
+.dashwrap .metrics .mstat.active{box-shadow:0 0 0 2px var(--navy),var(--shadow)}
+#dashBreakdown{margin-top:6px;background:var(--bg);border-radius:12px;padding:14px 16px}
+#dashBreakdown .bd-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:13.5px}
+#dashBreakdown .bd-row:last-child{border-bottom:none}
+#dashBreakdown .bd-row b{color:var(--navy)}
+#dashBreakdown .bd-row.total b{font-size:16px}
+#dashBreakdown h4{font-weight:800;color:var(--navy);margin-bottom:4px;font-size:14px}
+#dashBreakdown .bd-sub{margin-top:10px;font-weight:800;color:var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
 /* overdue new-lead alert (10 min, no contact) */
 .card.overdue{ border-left-color:var(--red)!important; background:#fff5f3; animation:odpulse 2s ease-in-out infinite; }
 @keyframes odpulse{ 0%,100%{box-shadow:0 0 0 1px var(--red) inset, var(--shadow)} 50%{box-shadow:0 0 0 2px var(--red) inset, 0 0 12px rgba(217,74,61,.35)} }
@@ -244,42 +259,14 @@ td .nm{font-weight:700;color:var(--ink)}
     </div>
     <span class="tb-label">Columns</span>
     <div class="chips" id="chips"></div>
+    <div class="tb-actions">
+      <button class="btn btn-primary btn-sm" id="dashBtn">📊 Metrics</button>
+      <button class="btn btn-amber btn-sm" id="notifBtn" title="Desktop pop-up alerts for new leads">🔔 Enable alerts</button>
+    </div>
   </div>
 </div>
 
 <main>
-  <div class="metrics" id="metricsBar">
-    <div class="mstat book">
-      <div class="mlabel">Booking rate</div>
-      <div class="mval" id="mBooking">—</div>
-      <div class="msub" id="mBookingSub">for quoting ÷ leads in</div>
-    </div>
-    <div class="mstat">
-      <div class="mlabel">Conversion rate</div>
-      <div class="mval" id="mConversion">—</div>
-      <div class="msub" id="mConversionSub">jobs booked ÷ quotes sent</div>
-    </div>
-    <div class="mstat lost">
-      <div class="mlabel">Lost/abandon rate</div>
-      <div class="mval" id="mLost">—</div>
-      <div class="msub" id="mLostSub">lost leads ÷ leads in</div>
-    </div>
-    <div class="mstat stl">
-      <div class="mlabel">Speed to lead</div>
-      <div class="mval" id="mSTL">—</div>
-      <div class="msub" id="mSTLSub">first call after lead came in</div>
-    </div>
-    <div class="mrange">
-      <label>From<input type="date" id="mFrom"></label>
-      <label>To<input type="date" id="mTo"></label>
-      <button class="btn btn-out btn-sm" id="mThisMonth">This month</button>
-      <button class="btn btn-out btn-sm" id="excBtn" title="Meeting/blackout windows excluded from speed to lead">⏸ Exceptions</button>
-      <button class="btn btn-out btn-sm" id="lostBtn" title="Why leads were lost — Abandoned & Archived-quote reasons">📊 Lost reasons</button>
-      <button class="btn btn-amber btn-sm" id="notifBtn" title="Desktop pop-up alerts for new leads">🔔 Enable alerts</button>
-    </div>
-    <div class="mactivity" id="mActivity"></div>
-    <div class="mnote" id="mNote"></div>
-  </div>
   <div class="count-note" id="countNote"></div>
   <div id="boardView" class="board"></div>
   <div id="tableView" class="hidden"></div>
@@ -336,6 +323,42 @@ td .nm{font-weight:700;color:var(--ink)}
     <div class="mfoot">
       <button class="btn btn-out" id="aCancel">Cancel</button>
       <button class="btn btn-primary" id="aCreate">Create lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="dashModal">
+  <div class="box dash">
+    <div class="dashhead">
+      <h2>Metrics</h2>
+      <div class="mrange">
+        <label>From<input type="date" id="mFrom"></label>
+        <label>To<input type="date" id="mTo"></label>
+        <button class="btn btn-out btn-sm" id="mThisMonth">This month</button>
+        <button class="btn btn-out btn-sm" id="excBtn" title="Meeting/blackout windows excluded from speed to lead">⏸ Exceptions</button>
+        <button class="btn btn-out btn-sm" id="lostBtn" title="Why leads were lost">📊 Lost reasons</button>
+      </div>
+      <button class="close" id="dashClose">&times;</button>
+    </div>
+    <div class="dashwrap">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Click a tile to see its breakdown below.</div>
+      <div class="metrics">
+        <div class="mstat book" data-metric="book">
+          <div class="mlabel">Booking rate</div><div class="mval" id="mBooking">—</div><div class="msub" id="mBookingSub">for quoting ÷ leads in</div>
+        </div>
+        <div class="mstat" data-metric="conversion">
+          <div class="mlabel">Conversion rate</div><div class="mval" id="mConversion">—</div><div class="msub" id="mConversionSub">jobs booked ÷ quotes sent</div>
+        </div>
+        <div class="mstat lost" data-metric="lost">
+          <div class="mlabel">Lost/abandon rate</div><div class="mval" id="mLost">—</div><div class="msub" id="mLostSub">lost leads ÷ leads in</div>
+        </div>
+        <div class="mstat stl" data-metric="stl">
+          <div class="mlabel">Speed to lead</div><div class="mval" id="mSTL">—</div><div class="msub" id="mSTLSub">first call after lead came in</div>
+        </div>
+      </div>
+      <div class="mactivity" id="mActivity"></div>
+      <div id="dashBreakdown"></div>
+      <div class="mnote" id="mNote" style="margin-top:12px"></div>
     </div>
   </div>
 </div>
@@ -893,7 +916,7 @@ function checkOverdueNew(){
   document.querySelectorAll('#alerts .alert-card').forEach(el=>{ if(!overdue.has(el.dataset.id)) el.remove(); });   // drop banners once handled
 }
 
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');['excModal','reasonModal','lostModal'].forEach(id=>document.getElementById(id).classList.remove('show'));} });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();addModal.classList.remove('show');['excModal','reasonModal','lostModal','dashModal'].forEach(id=>document.getElementById(id).classList.remove('show'));} });
 
 /* ============ Auto-refresh: fast lightweight check every 10s; full fetch only when something changed ============ */
 async function autoRefresh(){
@@ -924,7 +947,7 @@ function refreshDrawerLive(l){
 }
 
 /* ============ Metrics bar (booking rate + conversion rate) ============ */
-let METRICS=[];
+let METRICS=[], MB=null, dashActive='book';
 const COL_RANK={new:0,followup:1,quoting:2,quotes_sent:3,other:4,later:1,lost:-1,repository:-1};
 // speed to lead = first call logged − when the lead could first be worked.
 // Leads arriving after 7pm / before 9am PST start the clock at 9am (nobody's calling overnight → don't inflate).
@@ -970,6 +993,31 @@ function renderMetrics(){
   document.getElementById('mSTL').textContent=stlMed!=null?fmtDur(stlMed):'—';
   document.getElementById('mSTLSub').textContent=stlVals.length?`median · avg ${fmtDur(stlAvg)} · ${stlVals.length} lead${stlVals.length===1?'':'s'}`:'no calls logged yet';
   document.getElementById('mActivity').innerHTML=`<span class="lbl">Done this period</span><span>🧾 <b>${qsDone}</b> quotes sent</span><span class="sep">·</span><span>✅ <b>${jbDone}</b> jobs booked</span><span class="sep">·</span><span>📈 <b>${pct(jbDone,qsDone)}</b> conversion</span><span class="sep" style="flex:1"></span><span style="font-size:11px;color:var(--faint)">by the date it happened — matches Jobber</span>`;
+  const bk={u15:0,h1:0,h4:0,d1:0,over:0}; stlVals.forEach(v=>{ if(v<15)bk.u15++; else if(v<60)bk.h1++; else if(v<240)bk.h4++; else if(v<1440)bk.d1++; else bk.over++; });
+  MB={webIn,webQuoting,inbIn,quoteSent,jobs,lost,leadsIn,stlMed,stlAvg,stlN:stlVals.length,bk};
+  if(document.getElementById('dashModal') && document.getElementById('dashModal').classList.contains('show')) renderDashBreakdown();
+}
+function renderDashBreakdown(){
+  const el=document.getElementById('dashBreakdown'); if(!el||!MB) return;
+  document.querySelectorAll('#dashModal .mstat').forEach(t=>t.classList.toggle('active', t.dataset.metric===dashActive));
+  const pct=(n,d)=>d?Math.round(n/d*100)+'%':'—';
+  const row=(l,v,cls)=>`<div class="bd-row ${cls||''}"><span>${l}</span><b>${v}</b></div>`;
+  let title='',body='';
+  if(dashActive==='book'){ title='Booking rate — web / form leads';
+    body=row('Web/form leads that came in',MB.webIn)+row('Reached “For Quoting” (booked a quote)',MB.webQuoting)+row('Still before quoting / not booked',Math.max(0,MB.webIn-MB.webQuoting))+row('Booking rate',pct(MB.webQuoting,MB.webIn),'total')+row('Inbound-call leads (auto-booked, not in this rate)',MB.inbIn); }
+  else if(dashActive==='conversion'){ title='Conversion rate';
+    body=row('Quotes sent (reached Quote Sent)',MB.quoteSent)+row('Became jobs booked',MB.jobs)+row('Quoted but not booked',Math.max(0,MB.quoteSent-MB.jobs))+row('Conversion rate',pct(MB.jobs,MB.quoteSent),'total'); }
+  else if(dashActive==='lost'){ title='Lost / abandon rate';
+    body=row('Leads that came in',MB.leadsIn)+row('Lost (at “Lost Lead”, open)',MB.lost)+row('Still active / not lost',Math.max(0,MB.leadsIn-MB.lost))+row('Lost rate',pct(MB.lost,MB.leadsIn),'total')+'<div class="bd-sub">Open “Lost reasons” for the full why-breakdown across every lost lead.</div>'; }
+  else { title='Speed to lead';
+    body=row('Median',fmtDur(MB.stlMed))+row('Average',fmtDur(MB.stlAvg))+row('Leads with a first call',MB.stlN)+'<div class="bd-sub">Distribution</div>'+row('Under 15 min',MB.bk.u15)+row('15–60 min',MB.bk.h1)+row('1–4 hours',MB.bk.h4)+row('4–24 hours',MB.bk.d1)+row('Over 24 hours',MB.bk.over); }
+  el.innerHTML=`<h4>${title}</h4>${body}`;
+}
+if(document.getElementById('dashBtn')){
+  document.getElementById('dashBtn').onclick=()=>{ document.getElementById('dashModal').classList.add('show'); renderDashBreakdown(); loadMetrics(); };
+  document.getElementById('dashClose').onclick=()=>document.getElementById('dashModal').classList.remove('show');
+  document.getElementById('dashModal').onclick=e=>{ if(e.target.id==='dashModal') document.getElementById('dashModal').classList.remove('show'); };
+  document.querySelectorAll('#dashModal .mstat').forEach(t=>t.onclick=()=>{ dashActive=t.dataset.metric; renderDashBreakdown(); });
 }
 (function initMetrics(){
   setThisMonth();
