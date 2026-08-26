@@ -967,6 +967,7 @@ function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; 
 function setThisMonth(){ const t=ghlToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
 function showGhlToday(){ const t=ghlToday(); const el=document.getElementById('ghlTodayLbl'); if(el) el.textContent='Dates are Victoria/PG (Pacific) time · GHL today is '+t;
   ['mFrom','mTo','lostFrom','lostTo'].forEach(id=>{ const x=document.getElementById(id); if(x) x.max=t; });   // block picking a future (Pacific) date
+}
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; if(j.today) SERVER_TODAY=j.today; if(!metricsDatesSet){ setThisMonth(); metricsDatesSet=true; } showGhlToday(); }catch(e){} }
   else { const stAt=(l,st)=>{ const h=Array.isArray(l.stage_history)?l.stage_history:[]; let m=null; for(const e of h){ if(e&&e.stage===st&&e.at&&(!m||e.at>m)) m=e.at; } return m; };
