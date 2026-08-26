@@ -334,6 +334,7 @@ td .nm{font-weight:700;color:var(--ink)}
       <div class="mrange">
         <label>From<input type="date" id="mFrom"></label>
         <label>To<input type="date" id="mTo"></label>
+        <button class="btn btn-out btn-sm" id="mToday">Today</button>
         <button class="btn btn-out btn-sm" id="mThisMonth">This month</button>
         <button class="btn btn-out btn-sm" id="excBtn" title="Meeting/blackout windows excluded from speed to lead">⏸ Exceptions</button>
         <button class="btn btn-out btn-sm" id="lostBtn" title="Why leads were lost">📊 Lost reasons</button>
@@ -964,7 +965,8 @@ function fmtDur(mins){ if(mins==null||isNaN(mins)) return '—'; mins=Math.round
 function pacificToday(){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function pacificYmd(iso){ if(!iso) return null; if(isDateOnly(iso)) return iso; const d=parseD(iso); if(!d) return null; const p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d); const g=t=>p.find(x=>x.type===t).value; return `${g('year')}-${g('month')}-${g('day')}`; }
 function setThisMonth(){ const t=ghlToday(); document.getElementById('mFrom').value=t.slice(0,7)+'-01'; document.getElementById('mTo').value=t; }
-function showGhlToday(){ const el=document.getElementById('ghlTodayLbl'); if(el) el.textContent='Dates are Victoria/PG (Pacific) time · GHL today is '+ghlToday(); }
+function showGhlToday(){ const t=ghlToday(); const el=document.getElementById('ghlTodayLbl'); if(el) el.textContent='Dates are Victoria/PG (Pacific) time · GHL today is '+t;
+  ['mFrom','mTo','lostFrom','lostTo'].forEach(id=>{ const x=document.getElementById(id); if(x) x.max=t; });   // block picking a future (Pacific) date
 async function loadMetrics(){
   if(API){ try{ const r=await fetch(API.url+'&format=metrics'); const j=await r.json(); METRICS=j.metrics||[]; if(j.today) SERVER_TODAY=j.today; if(!metricsDatesSet){ setThisMonth(); metricsDatesSet=true; } showGhlToday(); }catch(e){} }
   else { const stAt=(l,st)=>{ const h=Array.isArray(l.stage_history)?l.stage_history:[]; let m=null; for(const e of h){ if(e&&e.stage===st&&e.at&&(!m||e.at>m)) m=e.at; } return m; };
@@ -1027,6 +1029,7 @@ if(document.getElementById('dashBtn')){
   document.getElementById('mFrom').onchange=renderMetrics;
   document.getElementById('mTo').onchange=renderMetrics;
   document.getElementById('mThisMonth').onclick=()=>{ setThisMonth(); renderMetrics(); };
+  document.getElementById('mToday').onclick=()=>{ const t=ghlToday(); document.getElementById('mFrom').value=t; document.getElementById('mTo').value=t; renderMetrics(); };
   document.getElementById('mNote').textContent='Rates are for leads that CAME IN during the range (by intake). Booking rate is WEB/form leads only — inbound-call leads (created straight at For Quoting) are auto-booked and shown as “+N inbound”. “Done this period” counts quotes/jobs by the date they happened (Jobber-style), and includes inbound. Activity is fully accurate from Aug 18 onward.';
 })();
 
